@@ -13,10 +13,6 @@ ON cat.at_jadwalpeserta (idjadwalujian, kodepeserta, nilai);
 CREATE INDEX IF NOT EXISTS idx_pertanyaan_lookup
 ON cat.at_pertanyaan (kodesoal, nourut);
 
--- 4. Index on live proctor security events
-CREATE INDEX IF NOT EXISTS idx_security_events_lookup
-ON cat.at_security_events (idjadwal, kodepeserta, event_type);
-
--- 5. Index on participant session extension table
+-- 4. Index on participant session extension table
 CREATE INDEX IF NOT EXISTS idx_sessions_ext_lookup
 ON cat.cat_participant_sessions_ext (idjadwalujian, kodepeserta, session_status);
