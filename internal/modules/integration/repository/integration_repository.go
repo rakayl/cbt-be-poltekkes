@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"poltekkes-cat-backend/internal/modules/integration/dto"
@@ -372,16 +374,58 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 				resp.Schedule.TglUjian = availableSession.TglUjian.Time.Format("2006-01-02")
 			}
 			if availableSession.JamMulai.Valid {
-				resp.Schedule.JamMulai = availableSession.JamMulai.String
+				resp.Schedule.JamMulai = formatTimeHi(availableSession.JamMulai.String)
 			}
-			if availableSession.JamSelesai.Valid {
-				resp.Schedule.JamSelesai = availableSession.JamSelesai.String
+			if availableSession.JamSelesai.Valid && strings.TrimSpace(availableSession.JamSelesai.String) != "" {
+				resp.Schedule.JamSelesai = formatTimeHi(availableSession.JamSelesai.String)
+			}
+			// If JamSelesai is still empty but JamMulai & Durasi are present, calculate JamSelesai
+			if resp.Schedule.JamSelesai == "" && resp.Schedule.JamMulai != "" && availableSession.Durasi > 0 {
+				parts := strings.Split(resp.Schedule.JamMulai, ":")
+				if len(parts) >= 2 {
+					hh, _ := strconv.Atoi(parts[0])
+					mm, _ := strconv.Atoi(parts[1])
+					totalMin := hh*60 + mm + availableSession.Durasi
+					resp.Schedule.JamSelesai = fmt.Sprintf("%02d:%02d", (totalMin/60)%24, totalMin%60)
+				}
 			}
 			resp.Schedule.WaktuPengerjaan = availableSession.Durasi
 		}
 	}
 
 	return resp, nil
+}
+
+func formatTimeHi(str string) string {
+	s := strings.TrimSpace(str)
+	if s == "" {
+		return ""
+	}
+	if strings.Contains(s, ":") {
+		parts := strings.Split(s, ":")
+		if len(parts) >= 2 {
+			hh, errH := strconv.Atoi(parts[0])
+			mm, errM := strconv.Atoi(parts[1])
+			if errH == nil && errM == nil {
+				return fmt.Sprintf("%02d:%02d", hh, mm)
+			}
+		}
+	}
+	clean := strings.ReplaceAll(s, ":", "")
+	if len(clean) == 4 {
+		hh, errH := strconv.Atoi(clean[:2])
+		mm, errM := strconv.Atoi(clean[2:])
+		if errH == nil && errM == nil {
+			return fmt.Sprintf("%02d:%02d", hh, mm)
+		}
+	} else if len(clean) == 3 {
+		hh, errH := strconv.Atoi(clean[:1])
+		mm, errM := strconv.Atoi(clean[1:])
+		if errH == nil && errM == nil {
+			return fmt.Sprintf("%02d:%02d", hh, mm)
+		}
+	}
+	return s
 }
 
 func (r *integrationRepository) CreateAccessLog(ctx context.Context, log *entity.APIAccessLog) error {
