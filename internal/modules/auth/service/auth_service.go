@@ -52,6 +52,16 @@ func (s *authService) LoginAdmin(ctx context.Context, req *dto.AdminLoginRequest
 			UnitName: r.UnitName,
 		})
 	}
+	if len(roleNames) == 0 {
+		roleNames = append(roleNames, "admin")
+		roleDTOs = append(roleDTOs, dto.UserRoleDTO{
+			UserID:   user.UserID,
+			RoleID:   "admin",
+			RoleName: "Administrator",
+			UnitID:   "1",
+			UnitName: "POLTEKKES SURABAYA",
+		})
+	}
 
 	token, err := jwt.GenerateAdminToken(user.UserID, user.Username, user.RealName, roleNames, duration)
 	if err != nil {
