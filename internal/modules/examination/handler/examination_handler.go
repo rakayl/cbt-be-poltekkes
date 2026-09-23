@@ -333,7 +333,8 @@ func (h *ExaminationHandler) UpdateExam(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, "Data ujian berhasil diperbarui", nil)
+	updatedExam, _ := h.service.GetExamByID(c.Request.Context(), examID)
+	response.Success(c, "Data ujian berhasil diperbarui", updatedExam)
 }
 
 func (h *ExaminationHandler) DeleteExam(c *gin.Context) {

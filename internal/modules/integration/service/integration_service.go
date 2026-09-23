@@ -185,11 +185,18 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 	req.Nama = strings.TrimSpace(req.Nama)
 	req.JK = strings.ToUpper(strings.TrimSpace(req.JK))
 	req.Email = strings.TrimSpace(req.Email)
-	req.HP = strings.TrimSpace(req.HP)
-	req.Alamat = strings.TrimSpace(req.Alamat)
+	if req.NomorUjian == "" && req.NoUjian != "" {
+		req.NomorUjian = strings.TrimSpace(req.NoUjian)
+	}
 
+	if req.IDUjian <= 0 && req.ExamID <= 0 {
+		return nil, fmt.Errorf("idujian wajib diisi")
+	}
+	if req.IDUjian <= 0 {
+		req.IDUjian = req.ExamID
+	}
 	if req.ExamID <= 0 {
-		return nil, fmt.Errorf("exam_id wajib diisi")
+		req.ExamID = req.IDUjian
 	}
 	if req.IDPendaftar == "" {
 		return nil, fmt.Errorf("idpendaftar wajib diisi")

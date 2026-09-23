@@ -103,6 +103,13 @@ func (s *examinationService) GetExams(ctx context.Context, page, perPage, period
 		if e.NilaiMinimal != nil {
 			grade = *e.NilaiMinimal
 		}
+
+		var updatedAt *string
+		if e.TUpdateTime != nil {
+			formatted := e.TUpdateTime.Format(time.RFC3339)
+			updatedAt = &formatted
+		}
+
 		results = append(results, &dto.ExamResponseDTO{
 			ExamID:        e.IDUjian,
 			ExamName:      e.NamaUjian,
@@ -116,6 +123,8 @@ func (s *examinationService) GetExams(ctx context.Context, page, perPage, period
 			IsPercobaan:   e.IsPercobaan,
 			Description:   e.Keterangan,
 			MaxViolations: e.MaxViolations,
+			UpdatedAt:     updatedAt,
+			UpdatedBy:     e.TUpdateUser,
 		})
 	}
 
@@ -149,6 +158,12 @@ func (s *examinationService) GetExamByID(ctx context.Context, examID int) (*dto.
 		grade = *e.NilaiMinimal
 	}
 
+	var updatedAt *string
+	if e.TUpdateTime != nil {
+		formatted := e.TUpdateTime.Format(time.RFC3339)
+		updatedAt = &formatted
+	}
+
 	return &dto.ExamResponseDTO{
 		ExamID:        e.IDUjian,
 		ExamName:      e.NamaUjian,
@@ -162,6 +177,8 @@ func (s *examinationService) GetExamByID(ctx context.Context, examID int) (*dto.
 		IsPercobaan:   e.IsPercobaan,
 		Description:   e.Keterangan,
 		MaxViolations: e.MaxViolations,
+		UpdatedAt:     updatedAt,
+		UpdatedBy:     e.TUpdateUser,
 	}, nil
 }
 

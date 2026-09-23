@@ -97,7 +97,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Daftar ujian aktif berhasil dimuat\",\n  \"result\": {\n    \"data\": [\n      {\n        \"exam_id\": 146,\n        \"exam_name\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n        \"period_id\": 66,\n        \"period_name\": \"SPMB 2026/2027 GEL 4\",\n        \"start_date\": \"2026-07-09\",\n        \"end_date\": \"2026-07-09\",\n        \"passing_grade\": 60.0,\n        \"description\": \"Ujian seleksi penerimaan mahasiswa baru\",\n        \"total_sessions\": 3,\n        \"total_capacity\": 120,\n        \"registered_count\": 45,\n        \"remaining_quota\": 75,\n        \"is_open\": true\n      }\n    ]\n  }\n}"
+							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Daftar ujian aktif berhasil dimuat\",\n  \"result\": {\n    \"data\": [\n      {\n        \"idujian\": 146,\n        \"namaujian\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n        \"idperiode\": 66,\n        \"namaperiode\": \"SPMB 2026/2027 GEL 4\",\n        \"tglmulai\": \"2026-07-09\",\n        \"tglselesai\": \"2026-07-09\",\n        \"nilaiminimal\": 60.0,\n        \"keterangan\": \"Ujian seleksi penerimaan mahasiswa baru\",\n        \"totalsesi\": 3,\n        \"totalkapasitas\": 120,\n        \"jumlahpeserta\": 45,\n        \"sisakuota\": 75,\n        \"is_open\": true\n      }\n    ]\n  }\n}"
 						}
 					]
 				},
@@ -120,7 +120,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"exam_id\": {{examId}},\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"nik\": \"3578012345670001\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"alamat\": \"Jl. Pucang Jajar No. 12, Surabaya\",\n  \"password\": \"\",\n  \"auto_plot_session\": true\n}",
+							"raw": "{\n  \"idujian\": {{examId}},\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"nik\": \"3578012345670001\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"alamat\": \"Jl. Pucang Jajar No. 12, Surabaya\",\n  \"password\": \"\",\n  \"auto_plot_session\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -138,7 +138,7 @@
 								"register"
 							]
 						},
-						"description": "Mendaftarkan peserta dari sistem SPMB langsung ke paket ujian CBT.\n\n### Penjelasan Payload:\n* `exam_id` (wajib): ID ujian tujuan yang didapat dari API 1.\n* `idpendaftar` (wajib): Nomor pendaftaran unik dari sistem SPMB.\n* `nomor_ujian` (opsional): Nomor peserta ujian jika sudah digenerate SPMB. Jika kosong, sistem CBT menggunakan `idpendaftar`.\n* `nama` (wajib): Nama lengkap peserta.\n* `jk` (opsional): Jenis kelamin ('L' / 'P', default: 'L').\n* `email`, `hp`, `alamat`, `nik` (opsional): Biodata kontak peserta.\n* `password` (opsional): Password login CBT peserta. Jika kosong, default password menggunakan nomor ujian/kode peserta.\n* `auto_plot_session` (opsional, default: true): Jika true, sistem CBT otomatis menempatkan peserta ke jadwal sesi dan ruangan yang masih memiliki sisa kuota.\n\n### Keamanan & Idempotensi:\nJika request dikirim ulang dengan data peserta yang sama (misal karena network timeout), sistem tidak akan error duplicate, melainkan mengembalikan kredensial dan jadwal yang sama (UPSERT)."
+						"description": "Mendaftarkan peserta dari sistem SPMB langsung ke paket ujian CBT.\n\n### Penjelasan Payload:\n* `idujian` (wajib): ID ujian tujuan yang didapat dari API 1.\n* `idpendaftar` (wajib): Nomor pendaftaran unik dari sistem SPMB.\n* `nomor_ujian` (opsional): Nomor peserta ujian jika sudah digenerate SPMB. Jika kosong, sistem CBT menggunakan `idpendaftar`.\n* `nama` (wajib): Nama lengkap peserta.\n* `jk` (opsional): Jenis kelamin ('L' / 'P', default: 'L').\n* `email`, `hp`, `alamat`, `nik` (opsional): Biodata kontak peserta.\n* `password` (opsional): Password login CBT peserta. Jika kosong, default password menggunakan nomor ujian/kode peserta.\n* `auto_plot_session` (opsional, default: true): Jika true, sistem CBT otomatis menempatkan peserta ke jadwal sesi dan ruangan yang masih memiliki sisa kuota.\n\n### Keamanan & Idempotensi:\nJika request dikirim ulang dengan data peserta yang sama (misal karena network timeout), sistem tidak akan error duplicate, melainkan mengembalikan kredensial dan jadwal yang sama (UPSERT)."
 					},
 					"response": [
 						{
@@ -159,7 +159,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"exam_id\": 146,\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"auto_plot_session\": true\n}",
+									"raw": "{\n  \"idujian\": 146,\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"auto_plot_session\": true\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -188,7 +188,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Peserta SPMB berhasil didaftarkan ke ujian CBT\",\n  \"result\": {\n    \"data\": {\n      \"participant_code\": \"260010045\",\n      \"idpendaftar\": \"260010045\",\n      \"exam_id\": 146,\n      \"exam_name\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n      \"period_id\": 66,\n      \"period_name\": \"SPMB 2026/2027 GEL 4\",\n      \"cbt_credentials\": {\n        \"username\": \"260010045\",\n        \"password\": \"260010045\"\n      },\n      \"schedule\": {\n        \"is_plotted\": true,\n        \"session_id\": 139,\n        \"room_name\": \"Lab Komputer 1\",\n        \"exam_date\": \"2026-07-09\",\n        \"start_time\": \"08:00\",\n        \"end_time\": \"09:30\",\n        \"duration_minutes\": 90\n      }\n    }\n  }\n}"
+							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Peserta SPMB berhasil didaftarkan ke ujian CBT\",\n  \"result\": {\n    \"data\": {\n      \"kodepeserta\": \"260010045\",\n      \"idpendaftar\": \"260010045\",\n      \"idujian\": 146,\n      \"namaujian\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n      \"idperiode\": 66,\n      \"namaperiode\": \"SPMB 2026/2027 GEL 4\",\n      \"cbt_credentials\": {\n        \"username\": \"260010045\",\n        \"password\": \"260010045\"\n      },\n      \"jadwal\": {\n        \"is_plotted\": true,\n        \"idjadwalujian\": 139,\n        \"namaruang\": \"Lab Komputer 1\",\n        \"tglujian\": \"2026-07-09\",\n        \"jammulai\": \"08:00\",\n        \"jamselesai\": \"09:30\",\n        \"waktupengerjaan\": 90\n      }\n    }\n  }\n}"
 						}
 					]
 				}
