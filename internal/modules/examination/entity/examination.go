@@ -3,17 +3,17 @@ package entity
 import "time"
 
 type Ujian struct {
-	IDUjian       int      `db:"idujian"`
-	NamaUjian     string   `db:"namaujian"`
-	IDPeriode     int      `db:"idperiode"`
-	NamaPeriode   string   `db:"namaperiode"`
-	NilaiMinimal  *float64 `db:"nilaiminimal"`
-	IDSatker      string   `db:"idsatker"`
-	NamaSatker    string   `db:"namasatker"`
-	KodeJenis     string   `db:"kodejenis"`
-	NamaJenis     string   `db:"namajenis"`
-	IsPercobaan   int      `db:"ispercobaan"`
-	Keterangan    *string  `db:"keterangan"`
+	IDUjian       int        `db:"idujian"`
+	NamaUjian     string     `db:"namaujian"`
+	IDPeriode     int        `db:"idperiode"`
+	NamaPeriode   string     `db:"namaperiode"`
+	NilaiMinimal  *float64   `db:"nilaiminimal"`
+	IDSatker      string     `db:"idsatker"`
+	NamaSatker    string     `db:"namasatker"`
+	KodeJenis     string     `db:"kodejenis"`
+	NamaJenis     string     `db:"namajenis"`
+	IsPercobaan   int        `db:"ispercobaan"`
+	Keterangan    *string    `db:"keterangan"`
 	SoftDelete    string     `db:"softdelete"`
 	MaxViolations int        `db:"max_violations"`
 	TUpdateTime   *time.Time `db:"t_updatetime"`
