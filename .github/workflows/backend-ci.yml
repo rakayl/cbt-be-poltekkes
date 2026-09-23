@@ -227,10 +227,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-binary-${{ github.sha }}
-          path: ./binary/
+          path: ./
 
       - name: Make binary executable
-        run: chmod +x ./binary/${{ env.BINARY_NAME }}
+        run: chmod +x ./${{ env.BINARY_NAME }}
 
       # ── Copy binary to VPS via SCP ─────────────────────────────────────────
       - name: Upload binary to VPS
@@ -240,9 +240,8 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_PORT || 22 }}
-          source: "./binary/${{ env.BINARY_NAME }}"
+          source: "${{ env.BINARY_NAME }}"
           target: "/tmp/poltekkes-deploy/"
-          strip_components: 1
 
       # ── Deploy on VPS via SSH ──────────────────────────────────────────────
       - name: Deploy on Staging VPS
@@ -278,8 +277,15 @@ jobs:
               ls -t "${BACKUP_DIR}"/${{ env.BINARY_NAME }}.*.bak 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
             fi
 
-            # 3. Pindahkan binary baru
-            cp /tmp/poltekkes-deploy/${{ env.BINARY_NAME }} "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
+            # 3. Cari dan pindahkan binary baru
+            NEW_BIN=$(find /tmp/poltekkes-deploy -name "${{ env.BINARY_NAME }}" -type f 2>/dev/null | head -1)
+            if [ -z "$NEW_BIN" ]; then
+              echo "❌ ERROR: Binary ${{ env.BINARY_NAME }} tidak ditemukan di /tmp/poltekkes-deploy"
+              ls -laR /tmp/poltekkes-deploy/ || true
+              exit 1
+            fi
+            echo "✅ Ditemukan binary di: $NEW_BIN"
+            cp "$NEW_BIN" "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             chmod +x "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             echo "✅ Binary updated"
 
@@ -368,10 +374,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-binary-${{ github.sha }}
-          path: ./binary/
+          path: ./
 
       - name: Make binary executable
-        run: chmod +x ./binary/${{ env.BINARY_NAME }}
+        run: chmod +x ./${{ env.BINARY_NAME }}
 
       # ── Copy binary to VPS via SCP ─────────────────────────────────────────
       - name: Upload binary to VPS
@@ -381,9 +387,8 @@ jobs:
           username: ${{ secrets.PRODUCTION_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_PORT || 22 }}
-          source: "./binary/${{ env.BINARY_NAME }}"
+          source: "${{ env.BINARY_NAME }}"
           target: "/tmp/poltekkes-deploy/"
-          strip_components: 1
 
       # ── Deploy on VPS via SSH ──────────────────────────────────────────────
       - name: Deploy on Production VPS
@@ -417,8 +422,15 @@ jobs:
               ls -t "${BACKUP_DIR}"/${{ env.BINARY_NAME }}.*.bak 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
             fi
 
-            # 3. Pindahkan binary baru
-            cp /tmp/poltekkes-deploy/${{ env.BINARY_NAME }} "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
+            # 3. Cari dan pindahkan binary baru
+            NEW_BIN=$(find /tmp/poltekkes-deploy -name "${{ env.BINARY_NAME }}" -type f 2>/dev/null | head -1)
+            if [ -z "$NEW_BIN" ]; then
+              echo "❌ ERROR: Binary ${{ env.BINARY_NAME }} tidak ditemukan di /tmp/poltekkes-deploy"
+              ls -laR /tmp/poltekkes-deploy/ || true
+              exit 1
+            fi
+            echo "✅ Ditemukan binary di: $NEW_BIN"
+            cp "$NEW_BIN" "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             chmod +x "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             echo "✅ Binary updated"
 
