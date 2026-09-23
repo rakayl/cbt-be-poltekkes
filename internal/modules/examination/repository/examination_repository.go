@@ -169,7 +169,9 @@ func (r *examinationRepository) GetExams(ctx context.Context, page, perPage, per
 			COALESCE(j.namajenis, '') as namajenis,
 			COALESCE(u.ispercobaan, 0) as ispercobaan,
 			u.keterangan,
-			COALESCE(u.max_violations, 5) as max_violations
+			COALESCE(u.max_violations, 5) as max_violations,
+			u.t_updatetime,
+			u.t_updateuser
 		FROM cat.at_ujian u
 		LEFT JOIN cat.at_periode p ON p.idperiode = u.idperiode
 		LEFT JOIN cat.at_jenisujian j ON j.kodejenis = u.kodejenis
@@ -204,7 +206,9 @@ func (r *examinationRepository) GetExamByID(ctx context.Context, examID int) (*e
 			COALESCE(j.namajenis, '') as namajenis,
 			COALESCE(u.ispercobaan, 0) as ispercobaan,
 			u.keterangan,
-			COALESCE(u.max_violations, 5) as max_violations
+			COALESCE(u.max_violations, 5) as max_violations,
+			u.t_updatetime,
+			u.t_updateuser
 		FROM cat.at_ujian u
 		LEFT JOIN cat.at_periode p ON p.idperiode = u.idperiode
 		LEFT JOIN cat.at_jenisujian j ON j.kodejenis = u.kodejenis
@@ -263,7 +267,8 @@ func (r *examinationRepository) UpdateExam(ctx context.Context, examID int, req 
 		    ispercobaan = $6,
 		    keterangan = $7,
 		    max_violations = $8,
-		    t_updatetime = NOW()
+		    t_updatetime = NOW(),
+		    t_updateact = 'u-admin-exam'
 		WHERE idujian = $9 AND (softdelete = '0' OR softdelete IS NULL)
 	`
 	keterangan := sql.NullString{String: req.Description, Valid: req.Description != ""}

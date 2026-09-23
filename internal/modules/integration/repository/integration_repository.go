@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"poltekkes-cat-backend/internal/modules/integration/dto"
@@ -179,28 +181,28 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 		var item dto.SPMBActiveExamDTO
 		var rawCapacity, regCount int
 		if scanErr := rows.Scan(
-			&item.ExamID,
-			&item.ExamName,
-			&item.PeriodID,
-			&item.PeriodName,
-			&item.PassingGrade,
-			&item.Description,
-			&item.StartDate,
-			&item.EndDate,
-			&item.TotalSessions,
+			&item.IDUjian,
+			&item.NamaUjian,
+			&item.IDPeriode,
+			&item.NamaPeriode,
+			&item.NilaiMinimal,
+			&item.Keterangan,
+			&item.TglMulai,
+			&item.TglSelesai,
+			&item.TotalSesi,
 			&rawCapacity,
 			&regCount,
 		); scanErr != nil {
 			return nil, scanErr
 		}
 
-		item.TotalCapacity = rawCapacity
-		item.RegisteredCount = regCount
+		item.TotalKapasitas = rawCapacity
+		item.JumlahPeserta = regCount
 		rem := rawCapacity - regCount
 		if rem < 0 {
 			rem = 0
 		}
-		item.RemainingQuota = rem
+		item.SisaKuota = rem
 		item.IsOpen = (rawCapacity == 0 || rem > 0)
 
 		results = append(results, &item)
@@ -217,14 +219,20 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 		IDPeriode   int    `db:"idperiode"`
 		NamaPeriode string `db:"namaperiode"`
 	}
+
+	examID := req.IDUjian
+	if examID <= 0 {
+		examID = req.ExamID
+	}
+
 	err := r.db.GetContext(ctx, &exam, `
 		SELECT u.idujian, u.namaujian, u.idperiode, COALESCE(p.namaperiode, '') as namaperiode
 		FROM cat.at_ujian u
 		LEFT JOIN cat.at_periode p ON p.idperiode = u.idperiode
 		WHERE u.idujian = $1 AND (u.softdelete = '0' OR u.softdelete IS NULL)
-	`, req.ExamID)
+	`, examID)
 	if err != nil {
-		return nil, fmt.Errorf("ujian #%d tidak ditemukan atau tidak aktif: %w", req.ExamID, err)
+		return nil, fmt.Errorf("ujian #%d tidak ditemukan atau tidak aktif: %w", examID, err)
 	}
 
 	// 2. Determine kodepeserta
@@ -288,12 +296,12 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 	}
 
 	resp := &dto.SPMBRegisterResponseDTO{
-		ParticipantCode: kodepeserta,
-		IDPendaftar:     req.IDPendaftar,
-		ExamID:          exam.IDUjian,
-		ExamName:        exam.NamaUjian,
-		PeriodID:        exam.IDPeriode,
-		PeriodName:      exam.NamaPeriode,
+		KodePeserta: kodepeserta,
+		IDPendaftar: req.IDPendaftar,
+		IDUjian:     exam.IDUjian,
+		NamaUjian:   exam.NamaUjian,
+		IDPeriode:   exam.IDPeriode,
+		NamaPeriode: exam.NamaPeriode,
 		CBTCredentials: dto.SPMBCredentialsDTO{
 			Username: kodepeserta,
 			Password: plainPassword,
@@ -358,24 +366,66 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 			`, kodepeserta, availableSession.IDJadwalUjian, availableSession.IDRuangUjian)
 
 			resp.Schedule.IsPlotted = true
-			resp.Schedule.SessionID = availableSession.IDJadwalUjian
+			resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
 			if availableSession.NamaRuang.Valid {
-				resp.Schedule.RoomName = availableSession.NamaRuang.String
+				resp.Schedule.NamaRuang = availableSession.NamaRuang.String
 			}
 			if availableSession.TglUjian.Valid {
-				resp.Schedule.ExamDate = availableSession.TglUjian.Time.Format("2006-01-02")
+				resp.Schedule.TglUjian = availableSession.TglUjian.Time.Format("2006-01-02")
 			}
 			if availableSession.JamMulai.Valid {
-				resp.Schedule.StartTime = availableSession.JamMulai.String
+				resp.Schedule.JamMulai = formatTimeHi(availableSession.JamMulai.String)
 			}
-			if availableSession.JamSelesai.Valid {
-				resp.Schedule.EndTime = availableSession.JamSelesai.String
+			if availableSession.JamSelesai.Valid && strings.TrimSpace(availableSession.JamSelesai.String) != "" {
+				resp.Schedule.JamSelesai = formatTimeHi(availableSession.JamSelesai.String)
 			}
-			resp.Schedule.DurationMinutes = availableSession.Durasi
+			// If JamSelesai is still empty but JamMulai & Durasi are present, calculate JamSelesai
+			if resp.Schedule.JamSelesai == "" && resp.Schedule.JamMulai != "" && availableSession.Durasi > 0 {
+				parts := strings.Split(resp.Schedule.JamMulai, ":")
+				if len(parts) >= 2 {
+					hh, _ := strconv.Atoi(parts[0])
+					mm, _ := strconv.Atoi(parts[1])
+					totalMin := hh*60 + mm + availableSession.Durasi
+					resp.Schedule.JamSelesai = fmt.Sprintf("%02d:%02d", (totalMin/60)%24, totalMin%60)
+				}
+			}
+			resp.Schedule.WaktuPengerjaan = availableSession.Durasi
 		}
 	}
 
 	return resp, nil
+}
+
+func formatTimeHi(str string) string {
+	s := strings.TrimSpace(str)
+	if s == "" {
+		return ""
+	}
+	if strings.Contains(s, ":") {
+		parts := strings.Split(s, ":")
+		if len(parts) >= 2 {
+			hh, errH := strconv.Atoi(parts[0])
+			mm, errM := strconv.Atoi(parts[1])
+			if errH == nil && errM == nil {
+				return fmt.Sprintf("%02d:%02d", hh, mm)
+			}
+		}
+	}
+	clean := strings.ReplaceAll(s, ":", "")
+	if len(clean) == 4 {
+		hh, errH := strconv.Atoi(clean[:2])
+		mm, errM := strconv.Atoi(clean[2:])
+		if errH == nil && errM == nil {
+			return fmt.Sprintf("%02d:%02d", hh, mm)
+		}
+	} else if len(clean) == 3 {
+		hh, errH := strconv.Atoi(clean[:1])
+		mm, errM := strconv.Atoi(clean[1:])
+		if errH == nil && errM == nil {
+			return fmt.Sprintf("%02d:%02d", hh, mm)
+		}
+	}
+	return s
 }
 
 func (r *integrationRepository) CreateAccessLog(ctx context.Context, log *entity.APIAccessLog) error {

@@ -37,25 +37,27 @@ type APIKeyResponseDTO struct {
 // =========================================================================
 
 type SPMBActiveExamDTO struct {
-	ExamID          int     `json:"exam_id"`
-	ExamName        string  `json:"exam_name"`
-	PeriodID        int     `json:"period_id"`
-	PeriodName      string  `json:"period_name"`
-	StartDate       string  `json:"start_date"`
-	EndDate         string  `json:"end_date"`
-	PassingGrade    float64 `json:"passing_grade"`
-	Description     string  `json:"description"`
-	TotalSessions   int     `json:"total_sessions"`
-	TotalCapacity   int     `json:"total_capacity"`
-	RegisteredCount int     `json:"registered_count"`
-	RemainingQuota  int     `json:"remaining_quota"`
-	IsOpen          bool    `json:"is_open"`
+	IDUjian        int     `json:"idujian"`
+	NamaUjian      string  `json:"namaujian"`
+	IDPeriode      int     `json:"idperiode"`
+	NamaPeriode    string  `json:"namaperiode"`
+	TglMulai       string  `json:"tglmulai"`
+	TglSelesai     string  `json:"tglselesai"`
+	NilaiMinimal   float64 `json:"nilaiminimal"`
+	Keterangan     string  `json:"keterangan"`
+	TotalSesi      int     `json:"totalsesi"`
+	TotalKapasitas int     `json:"totalkapasitas"`
+	JumlahPeserta  int     `json:"jumlahpeserta"`
+	SisaKuota      int     `json:"sisakuota"`
+	IsOpen         bool    `json:"is_open"`
 }
 
 type SPMBRegisterRequestDTO struct {
-	ExamID          int    `json:"exam_id" binding:"required"`
+	IDUjian         int    `json:"idujian"`
+	ExamID          int    `json:"exam_id"` // Fallback alias
 	IDPendaftar     string `json:"idpendaftar" binding:"required"`
-	NomorUjian      string `json:"nomor_ujian"` // Optional, if empty can be generated or equal to idpendaftar
+	NomorUjian      string `json:"nomor_ujian"`
+	NoUjian         string `json:"noujian"` // Alias
 	Nama            string `json:"nama" binding:"required"`
 	NIK             string `json:"nik"`
 	JK              string `json:"jk"` // L / P
@@ -74,23 +76,23 @@ type SPMBCredentialsDTO struct {
 
 type SPMBScheduleInfoDTO struct {
 	IsPlotted       bool   `json:"is_plotted"`
-	SessionID       int    `json:"session_id,omitempty"`
-	RoomName        string `json:"room_name,omitempty"`
-	ExamDate        string `json:"exam_date,omitempty"`
-	StartTime       string `json:"start_time,omitempty"`
-	EndTime         string `json:"end_time,omitempty"`
-	DurationMinutes int    `json:"duration_minutes,omitempty"`
+	IDJadwalUjian   int    `json:"idjadwalujian,omitempty"`
+	NamaRuang       string `json:"namaruang,omitempty"`
+	TglUjian        string `json:"tglujian,omitempty"`
+	JamMulai        string `json:"jammulai,omitempty"`
+	JamSelesai      string `json:"jamselesai,omitempty"`
+	WaktuPengerjaan int    `json:"waktupengerjaan,omitempty"`
 }
 
 type SPMBRegisterResponseDTO struct {
-	ParticipantCode string              `json:"participant_code"`
-	IDPendaftar     string              `json:"idpendaftar"`
-	ExamID          int                 `json:"exam_id"`
-	ExamName        string              `json:"exam_name"`
-	PeriodID        int                 `json:"period_id"`
-	PeriodName      string              `json:"period_name"`
-	CBTCredentials  SPMBCredentialsDTO  `json:"cbt_credentials"`
-	Schedule        SPMBScheduleInfoDTO `json:"schedule"`
+	KodePeserta    string              `json:"kodepeserta"`
+	IDPendaftar    string              `json:"idpendaftar"`
+	IDUjian        int                 `json:"idujian"`
+	NamaUjian      string              `json:"namaujian"`
+	IDPeriode      int                 `json:"idperiode"`
+	NamaPeriode    string              `json:"namaperiode"`
+	CBTCredentials SPMBCredentialsDTO  `json:"cbt_credentials"`
+	Schedule       SPMBScheduleInfoDTO `json:"jadwal"`
 }
 
 // =========================================================================
