@@ -213,8 +213,7 @@ func (s *scoringService) GetItemAnalysis(ctx context.Context, scheduleID int) (*
 			dIndex = math.Round(((float64(upperCorrectCount)-float64(lowerCorrectCount))/float64(groupSize))*100) / 100
 		}
 
-		discClass := "BAIK"
-		rec := "DAPAT DIGUNAKAN"
+		var discClass, rec string
 
 		if dIndex >= 0.40 {
 			discClass = "SANGAT BAIK"
