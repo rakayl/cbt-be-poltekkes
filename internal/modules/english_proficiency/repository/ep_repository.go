@@ -148,7 +148,7 @@ func (r *epRepository) SaveConversionProfile(ctx context.Context, req *dto.SaveC
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if req.IsDefault {
 		_, _ = tx.ExecContext(ctx, `UPDATE cat.ep_conversion_profiles SET is_default = FALSE WHERE id_exam_type = $1`, req.IDExamType)
@@ -192,7 +192,7 @@ func (r *epRepository) CreateExam(ctx context.Context, exam *entity.EPExam, sect
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	insertQ := `
 		INSERT INTO cat.ep_exams (id_exam_type, id_profile, id_template, exam_name, passing_score, validity_months_override, description, created_by, created_at, updated_at)
@@ -289,7 +289,7 @@ func (r *epRepository) UpdateExam(ctx context.Context, examID int, req *dto.Crea
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	updateQ := `
 		UPDATE cat.ep_exams
@@ -1039,8 +1039,8 @@ func (r *epRepository) RemoveParticipantFromSchedule(ctx context.Context, schedu
 // ─────────────────────────────────────────────────────────────────────────────
 
 func (r *epRepository) RecordSecurityEvent(ctx context.Context, scheduleID int, participantCode string, req *dto.EPSecurityEventRequestDTO, ip, userAgent string) (*dto.EPSecurityEventResponseDTO, error) {
-	severity := "LOW"
-	riskScore := 5
+	var severity string
+	var riskScore int
 	isViolationEvent := false
 	maxViolations := 3
 
@@ -2022,7 +2022,7 @@ func (r *epRepository) CreateStimulusWithItems(ctx context.Context, req *dto.Cre
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if strings.TrimSpace(req.StimulusCode) == "" {
 		var count int
@@ -2307,7 +2307,7 @@ func (r *epRepository) CreateSubItem(ctx context.Context, stimulusID int64, req 
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var maxOrder int
 	_ = tx.GetContext(ctx, &maxOrder, `SELECT COALESCE(MAX(item_order), 0) FROM cat.cat_stimulus_items WHERE id_stimulus = $1 AND (softdelete = '0' OR softdelete IS NULL)`, stimulusID)
@@ -2360,7 +2360,7 @@ func (r *epRepository) UpdateSubItem(ctx context.Context, itemID int64, req *dto
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	qMediaType := req.QuestionMediaType
 	if qMediaType == "" {
@@ -2411,7 +2411,7 @@ func (r *epRepository) ImportBankStimuli(ctx context.Context, kodesoal string, s
 	if err != nil {
 		return 0, 0, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	stimulusCount := 0
 	questionCount := 0

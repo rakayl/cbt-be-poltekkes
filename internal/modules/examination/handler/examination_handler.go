@@ -822,7 +822,7 @@ func (h *ExaminationHandler) SetParticipantVerificationStatus(c *gin.Context) {
 		return
 	}
 
-	msg := "Status verifikasi peserta berhasil diperbarui"
+	var msg string
 	if req.IsVerified == 1 {
 		msg = fmt.Sprintf("Peserta %s berhasil diverifikasi hadir secara manual", participantCode)
 	} else {
