@@ -232,16 +232,24 @@ jobs:
       - name: Make binary executable
         run: chmod +x ./${{ env.BINARY_NAME }}
 
-      # ── Copy binary to VPS via SCP ─────────────────────────────────────────
-      - name: Upload binary to VPS
+      - name: Prepare deployment package
+        run: |
+          mkdir -p ./deploy-pkg
+          cp ./${{ env.BINARY_NAME }} ./deploy-pkg/
+          cp ./docker-compose.yml ./deploy-pkg/
+          cp ./Dockerfile ./deploy-pkg/
+
+      # ── Copy files to VPS via SCP ──────────────────────────────────────────
+      - name: Upload deployment package to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_PORT || 22 }}
-          source: "${{ env.BINARY_NAME }}"
+          source: "./deploy-pkg/*"
           target: "/tmp/poltekkes-deploy/"
+          strip_components: 1
 
       # ── Deploy on VPS via SSH ──────────────────────────────────────────────
       - name: Deploy on Staging VPS
@@ -277,7 +285,7 @@ jobs:
               ls -t "${BACKUP_DIR}"/${{ env.BINARY_NAME }}.*.bak 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
             fi
 
-            # 3. Cari dan pindahkan binary baru
+            # 3. Cari dan pindahkan binary baru & file konfigurasi docker
             NEW_BIN=$(find /tmp/poltekkes-deploy -name "${{ env.BINARY_NAME }}" -type f 2>/dev/null | head -1)
             if [ -z "$NEW_BIN" ]; then
               echo "❌ ERROR: Binary ${{ env.BINARY_NAME }} tidak ditemukan di /tmp/poltekkes-deploy"
@@ -287,7 +295,20 @@ jobs:
             echo "✅ Ditemukan binary di: $NEW_BIN"
             cp "$NEW_BIN" "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             chmod +x "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
-            echo "✅ Binary updated"
+
+            # Salin docker-compose.yml & Dockerfile ke direktori deploy
+            DOCKER_COMPOSE_SRC=$(find /tmp/poltekkes-deploy -name "docker-compose.yml" -type f 2>/dev/null | head -1)
+            if [ -n "$DOCKER_COMPOSE_SRC" ]; then
+              cp "$DOCKER_COMPOSE_SRC" "${DEPLOY_DIR}/docker-compose.yml"
+              echo "✅ docker-compose.yml updated"
+            fi
+
+            DOCKERFILE_SRC=$(find /tmp/poltekkes-deploy -name "Dockerfile" -type f 2>/dev/null | head -1)
+            if [ -n "$DOCKERFILE_SRC" ]; then
+              cp "$DOCKERFILE_SRC" "${DEPLOY_DIR}/Dockerfile"
+              echo "✅ Dockerfile updated"
+            fi
+            echo "✅ Binary and Docker configs updated"
 
             # 4. Verifikasi file .env di server
             if [ ! -f "${DEPLOY_DIR}/.env" ]; then
@@ -379,16 +400,24 @@ jobs:
       - name: Make binary executable
         run: chmod +x ./${{ env.BINARY_NAME }}
 
-      # ── Copy binary to VPS via SCP ─────────────────────────────────────────
-      - name: Upload binary to VPS
+      - name: Prepare deployment package
+        run: |
+          mkdir -p ./deploy-pkg
+          cp ./${{ env.BINARY_NAME }} ./deploy-pkg/
+          cp ./docker-compose.yml ./deploy-pkg/
+          cp ./Dockerfile ./deploy-pkg/
+
+      # ── Copy files to VPS via SCP ──────────────────────────────────────────
+      - name: Upload deployment package to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_PORT || 22 }}
-          source: "${{ env.BINARY_NAME }}"
+          source: "./deploy-pkg/*"
           target: "/tmp/poltekkes-deploy/"
+          strip_components: 1
 
       # ── Deploy on VPS via SSH ──────────────────────────────────────────────
       - name: Deploy on Production VPS
@@ -422,7 +451,7 @@ jobs:
               ls -t "${BACKUP_DIR}"/${{ env.BINARY_NAME }}.*.bak 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
             fi
 
-            # 3. Cari dan pindahkan binary baru
+            # 3. Cari dan pindahkan binary baru & file konfigurasi docker
             NEW_BIN=$(find /tmp/poltekkes-deploy -name "${{ env.BINARY_NAME }}" -type f 2>/dev/null | head -1)
             if [ -z "$NEW_BIN" ]; then
               echo "❌ ERROR: Binary ${{ env.BINARY_NAME }} tidak ditemukan di /tmp/poltekkes-deploy"
@@ -432,7 +461,20 @@ jobs:
             echo "✅ Ditemukan binary di: $NEW_BIN"
             cp "$NEW_BIN" "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
             chmod +x "${DEPLOY_DIR}/${{ env.BINARY_NAME }}"
-            echo "✅ Binary updated"
+
+            # Salin docker-compose.yml & Dockerfile ke direktori deploy
+            DOCKER_COMPOSE_SRC=$(find /tmp/poltekkes-deploy -name "docker-compose.yml" -type f 2>/dev/null | head -1)
+            if [ -n "$DOCKER_COMPOSE_SRC" ]; then
+              cp "$DOCKER_COMPOSE_SRC" "${DEPLOY_DIR}/docker-compose.yml"
+              echo "✅ docker-compose.yml updated"
+            fi
+
+            DOCKERFILE_SRC=$(find /tmp/poltekkes-deploy -name "Dockerfile" -type f 2>/dev/null | head -1)
+            if [ -n "$DOCKERFILE_SRC" ]; then
+              cp "$DOCKERFILE_SRC" "${DEPLOY_DIR}/Dockerfile"
+              echo "✅ Dockerfile updated"
+            fi
+            echo "✅ Binary and Docker configs updated"
 
             # 4. Verifikasi .env server
             if [ ! -f "${DEPLOY_DIR}/.env" ]; then
