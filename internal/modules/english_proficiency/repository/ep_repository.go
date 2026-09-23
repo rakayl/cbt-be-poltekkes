@@ -2689,5 +2689,3 @@ func (r *epRepository) BatchImportExternalParticipants(ctx context.Context, list
 	}
 	return inserted, nil
 }
-
-

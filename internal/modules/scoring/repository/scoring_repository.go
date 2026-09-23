@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"time"
 	"poltekkes-cat-backend/internal/modules/scoring/entity"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )

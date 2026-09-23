@@ -110,4 +110,3 @@ type APIAccessLogResponseDTO struct {
 	ErrorMessage   string    `json:"error_message"`
 	CreatedAt      time.Time `json:"created_at"`
 }
-

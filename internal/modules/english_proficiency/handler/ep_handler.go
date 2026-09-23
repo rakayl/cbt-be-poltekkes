@@ -995,4 +995,3 @@ func (h *EPHandler) ImportExternalParticipants(c *gin.Context) {
 	}
 	response.Success(c, fmt.Sprintf("Berhasil mengimpor %d peserta umum", count), gin.H{"count": count})
 }
-

@@ -80,7 +80,6 @@ func (h *ExaminationHandler) RegisterRoutes(rg *gin.RouterGroup) {
 		admin.PUT("/proctor/participants/:participant_code/verify", h.SetParticipantVerificationStatus)
 	}
 
-
 	// Participant Exam Taking & Security Routes
 	participant := rg.Group("/participant")
 	participant.Use(middleware.ParticipantAuthMiddleware())
@@ -983,4 +982,3 @@ func (h *ExaminationHandler) GetMyExamResultDetail(c *gin.Context) {
 
 	response.Success(c, "Detail laporan hasil ujian berhasil dimuat", detail)
 }
-

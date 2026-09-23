@@ -15,4 +15,3 @@ func Init(rg *gin.RouterGroup, cbtDB *sqlx.DB, siakadDBs ...*sqlx.DB) {
 	hdl := handler.NewAuthHandler(svc)
 	hdl.RegisterRoutes(rg)
 }
-

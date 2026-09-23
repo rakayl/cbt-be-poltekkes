@@ -439,4 +439,3 @@ func (r *integrationRepository) GetAccessLogs(ctx context.Context, apiKeyID int,
 	}
 	return logs, total, err
 }
-

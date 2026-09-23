@@ -162,15 +162,15 @@ type EPSchedule struct {
 
 // ScheduleParticipant represents a registered test taker with dynamic section state
 type ScheduleParticipant struct {
-	IDParticipant     int        `db:"id_participant" json:"id_participant"`
-	IDEPSchedule      int        `db:"id_ep_schedule" json:"id_ep_schedule"`
-	KodePeserta       string     `db:"kodepeserta" json:"kodepeserta"`
-	SeatNumber        *int       `db:"seat_number" json:"seat_number"`
-	StartedAt         *time.Time `db:"started_at" json:"started_at"`
-	FinishedAt        *time.Time `db:"finished_at" json:"finished_at"`
-	CurrentSection    int        `db:"current_section" json:"current_section"`
-	SectionStartedAt  *time.Time `db:"section_started_at" json:"section_started_at"`
-	SectionDeadlineAt *time.Time `db:"section_deadline_at" json:"section_deadline_at"`
+	IDParticipant       int        `db:"id_participant" json:"id_participant"`
+	IDEPSchedule        int        `db:"id_ep_schedule" json:"id_ep_schedule"`
+	KodePeserta         string     `db:"kodepeserta" json:"kodepeserta"`
+	SeatNumber          *int       `db:"seat_number" json:"seat_number"`
+	StartedAt           *time.Time `db:"started_at" json:"started_at"`
+	FinishedAt          *time.Time `db:"finished_at" json:"finished_at"`
+	CurrentSection      int        `db:"current_section" json:"current_section"`
+	SectionStartedAt    *time.Time `db:"section_started_at" json:"section_started_at"`
+	SectionDeadlineAt   *time.Time `db:"section_deadline_at" json:"section_deadline_at"`
 	SessionStatus       string     `db:"session_status" json:"session_status"`
 	IsLocked            bool       `db:"is_locked" json:"is_locked"`
 	LockReason          *string    `db:"lock_reason" json:"lock_reason"`

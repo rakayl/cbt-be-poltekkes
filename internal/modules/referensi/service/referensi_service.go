@@ -214,4 +214,3 @@ func (s *referensiService) UpdateJenisPeriode(ctx context.Context, jenisPeriode 
 func (s *referensiService) DeleteJenisPeriode(ctx context.Context, jenisPeriode string) error {
 	return s.repo.DeleteJenisPeriode(ctx, jenisPeriode)
 }
-

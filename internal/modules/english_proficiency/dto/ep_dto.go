@@ -136,14 +136,14 @@ type CreateEPScheduleRequestDTO struct {
 }
 
 type UpdateEPScheduleRequestDTO struct {
-	IDRuang      int     `json:"id_ruang" binding:"required"`
-	ExamDate     string  `json:"exam_date" binding:"required"` // YYYY-MM-DD
-	StartTime    string  `json:"start_time" binding:"required"`
-	EndTime      string  `json:"end_time" binding:"required"`
-	SessionToken string  `json:"session_token" binding:"required"`
-	Capacity     int     `json:"capacity"`
-	ProctorName  string  `json:"proctor_name"`
-	IsActive     *bool   `json:"is_active"`
+	IDRuang      int    `json:"id_ruang" binding:"required"`
+	ExamDate     string `json:"exam_date" binding:"required"` // YYYY-MM-DD
+	StartTime    string `json:"start_time" binding:"required"`
+	EndTime      string `json:"end_time" binding:"required"`
+	SessionToken string `json:"session_token" binding:"required"`
+	Capacity     int    `json:"capacity"`
+	ProctorName  string `json:"proctor_name"`
+	IsActive     *bool  `json:"is_active"`
 }
 
 type EPScheduleResponseDTO struct {
@@ -532,4 +532,3 @@ type ProctorLatestGridItemDTO struct {
 	TotalViolations int     `json:"total_violations"`
 	RiskLevel       string  `json:"risk_level"`
 }
-

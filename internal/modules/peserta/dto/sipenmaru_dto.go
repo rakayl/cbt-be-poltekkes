@@ -76,11 +76,11 @@ func (r *SipenmaruPreviewRequestDTO) GetPMBPeriodString() string {
 
 // SipenmaruPreviewResponseDTO hasil ringkasan dan daftar kandidat
 type SipenmaruPreviewResponseDTO struct {
-	TotalCount     int                     `json:"total_count"`
-	EligibleCount  int                     `json:"eligible_count"`
-	ImportedCount  int                     `json:"imported_count"`
-	ReadyCount     int                     `json:"ready_count"`
-	Candidates     []SipenmaruCandidateDTO `json:"candidates"`
+	TotalCount    int                     `json:"total_count"`
+	EligibleCount int                     `json:"eligible_count"`
+	ImportedCount int                     `json:"imported_count"`
+	ReadyCount    int                     `json:"ready_count"`
+	Candidates    []SipenmaruCandidateDTO `json:"candidates"`
 }
 
 // ImportSipenmaruRequestDTO instruksi eksekusi impor
