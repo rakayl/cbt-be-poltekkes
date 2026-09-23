@@ -1,0 +1,214 @@
+# ==============================================================================
+# Poltekkes CAT Backend — Enterprise .gitignore (Golang)
+# ==============================================================================
+# Covers: Go binaries, environment secrets, database dumps, Docker overrides,
+#         IDE files, OS artifacts, uploads, logs, and security credentials.
+# ==============================================================================
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Go Build Output & Binaries
+# ──────────────────────────────────────────────────────────────────────────────
+# Compiled binaries
+poltekkes-cat-api
+poltekkes-cat-api.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build/test artifacts
+*.test
+*.out
+*.prof
+*.pprof
+*.coverprofile
+coverage.txt
+coverage.html
+cpu.prof
+mem.prof
+trace.out
+
+# Go workspace (if using multi-module workspace)
+go.work
+go.work.sum
+
+# Vendor directory (uncomment if you vendor dependencies)
+# vendor/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Environment & Secrets (CRITICAL — Never commit real env files)
+# ──────────────────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.staging
+.env.staging.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.local
+
+# Keep .env.example as reference
+!.env.example
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Security & Credentials (NEVER commit these)
+# ──────────────────────────────────────────────────────────────────────────────
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+.ssl/
+certificates/
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.gpg
+*.asc
+jwt_secret.txt
+private.key
+public.key
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Database Dumps & Data Files
+# ──────────────────────────────────────────────────────────────────────────────
+*.sql
+*.dump
+*.bak
+*.pg_dump
+*.sqlite
+*.sqlite3
+*.db
+
+# Keep migration SQL files — they are tracked source code
+!internal/shared/database/migrations/*.sql
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Uploads & User-Generated Content
+# ──────────────────────────────────────────────────────────────────────────────
+uploads/media/*
+!uploads/media/.gitkeep
+uploads/tmp/
+uploads/cache/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Logs & Debug
+# ──────────────────────────────────────────────────────────────────────────────
+logs/
+*.log
+gin.log
+access.log
+error.log
+app.log
+debug.log
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Docker (local development overrides)
+# ──────────────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# IDE & Editor
+# ──────────────────────────────────────────────────────────────────────────────
+# VS Code (keep shared workspace settings & recommended extensions)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+
+# JetBrains (GoLand, IntelliJ)
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Vim / Neovim
+*.swp
+*.swo
+*.sw?
+*~
+tags
+.netrwhist
+
+# Emacs
+\#*\#
+.#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ──────────────────────────────────────────────────────────────────────────────
+# OS Artifacts
+# ──────────────────────────────────────────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*.directory
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Testing & CI Artifacts
+# ──────────────────────────────────────────────────────────────────────────────
+test-results/
+junit.xml
+test-report.xml
+.testcache/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Postman / API Client Collections (optional — uncomment to track)
+# ──────────────────────────────────────────────────────────────────────────────
+# Uncomment below to ignore Postman collections:
+# *_postman_collection.json
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Miscellaneous
+# ──────────────────────────────────────────────────────────────────────────────
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+*.7z
+*.tmp
+*.temp
+*.orig
+*.patch
+.history/
+.turbo/
+scratch/
+
+# AI/Agent workspace artifacts (do not track)
+.gemini/
+.agents/
+.cursor/
+.copilot/
