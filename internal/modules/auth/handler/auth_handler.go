@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"errors"
+	"strings"
+
 	"poltekkes-cat-backend/internal/modules/auth/dto"
 	"poltekkes-cat-backend/internal/modules/auth/service"
 	"poltekkes-cat-backend/internal/shared/response"
@@ -34,6 +37,10 @@ func (h *AuthHandler) LoginAdmin(c *gin.Context) {
 
 	res, err := h.service.LoginAdmin(c.Request.Context(), &req)
 	if err != nil {
+		if errors.Is(err, service.ErrNoAccessRole) || strings.Contains(err.Error(), "tidak memiliki hak akses") {
+			response.Forbidden(c, err.Error())
+			return
+		}
 		response.BadRequest(c, err.Error(), nil)
 		return
 	}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/google/uuid"
 )
+
+var ErrNoAccessRole = errors.New("akun tidak memiliki hak akses atau role pada sistem ini")
 
 type AuthService interface {
 	LoginAdmin(ctx context.Context, req *dto.AdminLoginRequestDTO) (*dto.AdminLoginResponseDTO, error)
@@ -51,6 +54,9 @@ func (s *authService) LoginAdmin(ctx context.Context, req *dto.AdminLoginRequest
 			UnitID:   r.UnitID,
 			UnitName: r.UnitName,
 		})
+	}
+	if len(roleNames) == 0 {
+		return nil, ErrNoAccessRole
 	}
 
 	token, err := jwt.GenerateAdminToken(user.UserID, user.Username, user.RealName, roleNames, duration)

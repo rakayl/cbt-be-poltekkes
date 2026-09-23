@@ -51,23 +51,30 @@ func main() {
 	_ = os.MkdirAll("./uploads/media", 0755)
 	r.Static("/uploads", "./uploads")
 
-	// 6. Healthcheck Endpoint
-	r.GET("/api/v1/health", func(c *gin.Context) {
+	// 6. Root & Healthcheck Endpoints
+	rootHandler := func(c *gin.Context) {
 		dbMode := "Single Database (" + cfg.DBName + ")"
 		if cfg.IsDualDB() {
 			dbMode = "Dual Database (CBT: " + cfg.DBName + ", SIAKAD: " + cfg.DBSiakadName + ")"
 		}
-		response.Success(c, "POLTEKKES Enterprise Modular CBT API Engine is healthy", map[string]string{
+		response.Success(c, "POLTEKKES Enterprise Modular CBT API Engine is running", map[string]string{
 			"version":       "2.0.0",
 			"architecture":  "Feature-Driven Modular Monolith (Dual-Database Capable)",
 			"database_mode": dbMode,
 			"status":        "HEALTHY",
+			"docs":          "/api/v1/health",
 		})
-	})
+	}
+
+	r.GET("/", rootHandler)
+	r.GET("/api/v1/health", rootHandler)
 
 	// 7. Register Feature Modules on /api/v1
 	apiV1 := r.Group("/api/v1")
 	{
+		apiV1.GET("", rootHandler)
+		apiV1.GET("/", rootHandler)
+
 		// Module 1: Auth & Gate SSO
 		auth.Init(apiV1.Group("/auth"), cbtDB, siakadDB)
 
