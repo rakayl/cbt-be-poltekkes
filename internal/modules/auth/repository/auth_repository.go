@@ -41,7 +41,8 @@ func (r *authRepository) AuthenticateAdmin(ctx context.Context, username, passwo
 
 	var user entity.User
 	query := `
-		SELECT userid, username, userdesc, email, isactive 
+		SELECT userid, username, userdesc, email, 
+		       COALESCE(NULLIF(isactive::text, '')::integer, 1) as isactive 
 		FROM gate.sc_user 
 		WHERE username = $1 
 		  AND (
@@ -52,7 +53,8 @@ func (r *authRepository) AuthenticateAdmin(ctx context.Context, username, passwo
 		      OR password = $3
 		      OR ($1 = 'admin' AND ($2 = 'admin' OR $2 = 'password' OR $2 = 'admin123'))
 		  ) 
-		  AND isactive = 1
+		  AND (isactive::text = '1' OR isactive IS NULL OR isactive::text = '')
+		  AND (softdelete = '0' OR softdelete IS NULL)
 	`
 	err := r.siakadDB.GetContext(ctx, &user, query, username, password, md5Hash)
 	if err != nil {
@@ -64,11 +66,11 @@ func (r *authRepository) AuthenticateAdmin(ctx context.Context, username, passwo
 
 	var roles []*entity.UserRole
 	rolesQuery := `
-		SELECT ur.userid, ur.idrole, r.namarole, ur.idsatker, COALESCE(u.namasatker, 'POLTEKKES SURABAYA') as namaunit
+		SELECT ur.userid, ur.idrole, COALESCE(r.namarole, ur.idrole) as namarole, ur.idsatker, COALESCE(u.namasatker, 'POLTEKKES SURABAYA') as namaunit
 		FROM gate.sc_userrole ur
-		JOIN gate.sc_role r ON r.idrole = ur.idrole
+		LEFT JOIN gate.sc_role r ON r.idrole = ur.idrole
 		LEFT JOIN gate.sc_unit u ON u.idsatker = ur.idsatker
-		WHERE ur.userid = $1
+		WHERE ur.userid = $1 AND (ur.softdelete = '0' OR ur.softdelete IS NULL)
 	`
 	_ = r.siakadDB.SelectContext(ctx, &roles, rolesQuery, user.UserID)
 	return &user, roles, nil
@@ -81,7 +83,7 @@ func (r *authRepository) AuthenticateParticipant(ctx context.Context, code, pass
 
 	var peserta entity.Peserta
 	query := `
-		SELECT kodepeserta, nama, isaktif, tokenlogin, email, hp, alamat
+		SELECT kodepeserta, nama, COALESCE(NULLIF(isaktif::text, '')::integer, 1) as isaktif, tokenlogin, email, hp, alamat
 		FROM cat.at_peserta
 		WHERE kodepeserta = $1 
 		  AND (
@@ -217,7 +219,7 @@ func (r *authRepository) AuthenticateEPParticipant(ctx context.Context, identifi
 	if err != nil {
 		// 2. Fallback: Cari di cat.at_peserta HANYA jika peserta tersebut ada di ep_schedule_participants (data legacy)
 		queryLegacy := `
-			SELECT p.kodepeserta, p.nama, p.isaktif, p.tokenlogin, p.email, p.hp, p.alamat
+			SELECT p.kodepeserta, p.nama, COALESCE(NULLIF(p.isaktif::text, '')::integer, 1) as isaktif, p.tokenlogin, p.email, p.hp, p.alamat
 			FROM cat.at_peserta p
 			JOIN cat.ep_schedule_participants sp ON sp.kodepeserta = p.kodepeserta
 			WHERE (p.kodepeserta = $1 OR p.email = $1)
