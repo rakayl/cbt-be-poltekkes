@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 	"poltekkes-cat-backend/internal/modules/peserta/dto"
 	"poltekkes-cat-backend/internal/modules/peserta/service"
 	"poltekkes-cat-backend/internal/shared/response"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -284,4 +284,3 @@ func (h *PesertaHandler) ImportSipenmaru(c *gin.Context) {
 
 	response.Success(c, msg, result)
 }
-

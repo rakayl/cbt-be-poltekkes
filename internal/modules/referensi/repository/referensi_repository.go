@@ -335,4 +335,3 @@ func (r *referensiRepository) DeleteJenisPeriode(ctx context.Context, jenisPerio
 	_, err := r.db.ExecContext(ctx, query, jenisPeriode)
 	return err
 }
-

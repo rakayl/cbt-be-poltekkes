@@ -249,4 +249,3 @@ func (s *pesertaService) PreviewSipenmaruCandidates(ctx context.Context, req *dt
 func (s *pesertaService) ExecuteImportSipenmaru(ctx context.Context, req *dto.ImportSipenmaruRequestDTO) (*dto.ImportSipenmaruResponseDTO, error) {
 	return s.repo.ImportSipenmaruCandidates(ctx, req)
 }
-

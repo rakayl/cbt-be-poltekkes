@@ -43,9 +43,9 @@ type SalinSoalRequestDTO struct {
 }
 
 type SalinSoalResponseDTO struct {
-	SumberKodeSoal  string `json:"sumber_kode_soal"`
-	TargetKodeSoal  string `json:"target_kode_soal"`
-	TotalDisalin    int    `json:"total_pertanyaan_disalin"`
+	SumberKodeSoal string `json:"sumber_kode_soal"`
+	TargetKodeSoal string `json:"target_kode_soal"`
+	TotalDisalin   int    `json:"total_pertanyaan_disalin"`
 }
 
 type UnitDTO struct {

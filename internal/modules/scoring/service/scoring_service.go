@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"sort"
 	"poltekkes-cat-backend/internal/modules/scoring/dto"
 	"poltekkes-cat-backend/internal/modules/scoring/repository"
 	"poltekkes-cat-backend/internal/shared/response"
+	"sort"
 )
 
 type ScoringService interface {

@@ -27,7 +27,7 @@ type ExaminationService interface {
 	SaveAnswer(ctx context.Context, participantCode string, req *dto.SaveAnswerRequestDTO) (*dto.SaveAnswerResponseDTO, error)
 	GetLiveMonitoring(ctx context.Context, scheduleID int) (*dto.LiveMonitoringResponseDTO, error)
 	FinishExam(ctx context.Context, participantCode string, scheduleID int, submitReason string) (*dto.FinishExamResponseDTO, error)
-	
+
 	// CBT Security & Proctor Control
 	RecordSecurityEvent(ctx context.Context, participantCode, clientIP, userAgent string, req *dto.SecurityEventRequestDTO) (*dto.SecurityEventResponseDTO, error)
 	GetRecentSecurityEvents(ctx context.Context, scheduleID int, limit int) ([]*dto.SecurityEventItemDTO, error)
@@ -104,17 +104,17 @@ func (s *examinationService) GetExams(ctx context.Context, page, perPage, period
 			grade = *e.NilaiMinimal
 		}
 		results = append(results, &dto.ExamResponseDTO{
-			ExamID:       e.IDUjian,
-			ExamName:     e.NamaUjian,
-			PeriodID:     e.IDPeriode,
-			PeriodName:   e.NamaPeriode,
-			PassingGrade: grade,
-			KodeJenis:    e.KodeJenis,
-			NamaJenis:    e.NamaJenis,
-			IDSatker:     e.IDSatker,
-			NamaSatker:   e.NamaSatker,
-			IsPercobaan:  e.IsPercobaan,
-			Description:  e.Keterangan,
+			ExamID:        e.IDUjian,
+			ExamName:      e.NamaUjian,
+			PeriodID:      e.IDPeriode,
+			PeriodName:    e.NamaPeriode,
+			PassingGrade:  grade,
+			KodeJenis:     e.KodeJenis,
+			NamaJenis:     e.NamaJenis,
+			IDSatker:      e.IDSatker,
+			NamaSatker:    e.NamaSatker,
+			IsPercobaan:   e.IsPercobaan,
+			Description:   e.Keterangan,
 			MaxViolations: e.MaxViolations,
 		})
 	}
@@ -150,17 +150,17 @@ func (s *examinationService) GetExamByID(ctx context.Context, examID int) (*dto.
 	}
 
 	return &dto.ExamResponseDTO{
-		ExamID:       e.IDUjian,
-		ExamName:     e.NamaUjian,
-		PeriodID:     e.IDPeriode,
-		PeriodName:   e.NamaPeriode,
-		PassingGrade: grade,
-		KodeJenis:    e.KodeJenis,
-		NamaJenis:    e.NamaJenis,
-		IDSatker:     e.IDSatker,
-		NamaSatker:   e.NamaSatker,
-		IsPercobaan:  e.IsPercobaan,
-		Description:  e.Keterangan,
+		ExamID:        e.IDUjian,
+		ExamName:      e.NamaUjian,
+		PeriodID:      e.IDPeriode,
+		PeriodName:    e.NamaPeriode,
+		PassingGrade:  grade,
+		KodeJenis:     e.KodeJenis,
+		NamaJenis:     e.NamaJenis,
+		IDSatker:      e.IDSatker,
+		NamaSatker:    e.NamaSatker,
+		IsPercobaan:   e.IsPercobaan,
+		Description:   e.Keterangan,
 		MaxViolations: e.MaxViolations,
 	}, nil
 }
@@ -528,15 +528,15 @@ func (s *examinationService) GetLiveMonitoring(ctx context.Context, scheduleID i
 			totQ = 10
 		}
 		participants = append(participants, dto.LiveMonitoringParticipantDTO{
-			ParticipantCode:     item.KodePeserta,
-			Name:                item.Nama,
-			DeskNumber:          item.NoUrutPeserta,
-			ExamStatus:          item.StatusUjian,
-			TotalQuestions:      totQ,
-			AnsweredCount:       item.JumlahTerjawab,
-			RemainingSeconds:    remSec,
-			ConnectionStatus:    connStatus,
-			LastActivity:        lastAct,
+			ParticipantCode:           item.KodePeserta,
+			Name:                      item.Nama,
+			DeskNumber:                item.NoUrutPeserta,
+			ExamStatus:                item.StatusUjian,
+			TotalQuestions:            totQ,
+			AnsweredCount:             item.JumlahTerjawab,
+			RemainingSeconds:          remSec,
+			ConnectionStatus:          connStatus,
+			LastActivity:              lastAct,
 			RiskScore:                 item.RiskScore,
 			RiskLevel:                 item.RiskLevel,
 			TabSwitchCount:            item.TabSwitchCount,
@@ -548,9 +548,9 @@ func (s *examinationService) GetLiveMonitoring(ctx context.Context, scheduleID i
 			DisconnectCount:           item.DisconnectCount,
 			ReconnectCount:            item.ReconnectCount,
 			IsLocked:                  item.IsLocked,
-			LockReason:          item.LockReason,
-			ProctorWarning:      item.ProctorWarning,
-			IsVerified:          item.IsVerified,
+			LockReason:                item.LockReason,
+			ProctorWarning:            item.ProctorWarning,
+			IsVerified:                item.IsVerified,
 			BarcodeScannedAt: func() *string {
 				if item.BarcodeScannedAt != nil {
 					s := item.BarcodeScannedAt.Format(time.RFC3339)

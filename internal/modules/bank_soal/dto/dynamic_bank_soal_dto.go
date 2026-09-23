@@ -75,16 +75,16 @@ type CreateBlueprintDTO struct {
 
 // SetExamScheduleExtDTO represents the configuration for exam time window and scoring rules
 type SetExamScheduleExtDTO struct {
-	IDJadwalUjian             int     `json:"idjadwalujian" binding:"required"`
-	IDBlueprint               *int64  `json:"id_blueprint"`
-	WindowStartTime           string  `json:"window_start_time" binding:"required"` // ISO timestamp or "2026-08-27 08:00:00"
-	WindowEndTime             string  `json:"window_end_time" binding:"required"`   // ISO timestamp or "2026-08-27 15:00:00"
-	ScoringRule               string  `json:"scoring_rule"`                         // STANDARD, PENALTY_MINUS_ONE, CUSTOM
-	DefaultCorrectScore       float64 `json:"default_correct_score"`
-	DefaultWrongScore         float64 `json:"default_wrong_score"`
-	DefaultBlankScore         float64 `json:"default_blank_score"`
-	AutoSubmitOnWindowEnd     bool    `json:"auto_submit_on_window_end"`
-	Timezone                  string  `json:"timezone"`
+	IDJadwalUjian         int     `json:"idjadwalujian" binding:"required"`
+	IDBlueprint           *int64  `json:"id_blueprint"`
+	WindowStartTime       string  `json:"window_start_time" binding:"required"` // ISO timestamp or "2026-08-27 08:00:00"
+	WindowEndTime         string  `json:"window_end_time" binding:"required"`   // ISO timestamp or "2026-08-27 15:00:00"
+	ScoringRule           string  `json:"scoring_rule"`                         // STANDARD, PENALTY_MINUS_ONE, CUSTOM
+	DefaultCorrectScore   float64 `json:"default_correct_score"`
+	DefaultWrongScore     float64 `json:"default_wrong_score"`
+	DefaultBlankScore     float64 `json:"default_blank_score"`
+	AutoSubmitOnWindowEnd bool    `json:"auto_submit_on_window_end"`
+	Timezone              string  `json:"timezone"`
 }
 
 // SaveMultiAnswerDTO represents answering a sub-item in a dynamic exam

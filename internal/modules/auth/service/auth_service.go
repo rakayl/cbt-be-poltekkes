@@ -226,8 +226,8 @@ func (s *authService) GetModuleMenus(ctx context.Context, moduleID, roleID strin
 
 func (s *authService) SwitchModule(ctx context.Context, req *dto.SwitchModuleRequestDTO) (map[string]string, error) {
 	return map[string]string{
-		"target_module": req.TargetModule,
-		"redirect_url":  "/" + req.TargetModule + "/login",
+		"target_module":   req.TargetModule,
+		"redirect_url":    "/" + req.TargetModule + "/login",
 		"handshake_token": uuid.New().String(),
 	}, nil
 }
@@ -256,4 +256,3 @@ func formatTimeString(t string) string {
 	}
 	return t
 }
-

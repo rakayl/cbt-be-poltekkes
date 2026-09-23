@@ -277,4 +277,3 @@ func (h *ReferensiHandler) DeleteJenisPeriode(c *gin.Context) {
 	}
 	response.Success(c, "Jenis periode berhasil dihapus", nil)
 }
-
