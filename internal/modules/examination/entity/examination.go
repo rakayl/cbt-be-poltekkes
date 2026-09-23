@@ -14,8 +14,10 @@ type Ujian struct {
 	NamaJenis     string   `db:"namajenis"`
 	IsPercobaan   int      `db:"ispercobaan"`
 	Keterangan    *string  `db:"keterangan"`
-	SoftDelete    string   `db:"softdelete"`
-	MaxViolations int      `db:"max_violations"`
+	SoftDelete    string     `db:"softdelete"`
+	MaxViolations int        `db:"max_violations"`
+	TUpdateTime   *time.Time `db:"t_updatetime"`
+	TUpdateUser   *string    `db:"t_updateuser"`
 }
 
 type ExamParticipant struct {

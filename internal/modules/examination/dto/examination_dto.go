@@ -19,6 +19,8 @@ type ExamResponseDTO struct {
 	IsPercobaan   int     `json:"is_percobaan"`
 	Description   *string `json:"description,omitempty"`
 	MaxViolations int     `json:"max_violations"`
+	UpdatedAt     *string `json:"updated_at,omitempty"`
+	UpdatedBy     *string `json:"updated_by,omitempty"`
 }
 
 type CreateExamRequestDTO struct {
