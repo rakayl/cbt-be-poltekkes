@@ -44,23 +44,23 @@ type Peserta struct {
 }
 
 type SesiPeserta struct {
-	IDJadwalUjian   int       `db:"idjadwalujian"`
-	IDUjian         int       `db:"idujian"`
-	NamaUjian       string    `db:"namaujian"`
-	KodeSoal        string    `db:"kodesoal"`
-	IDRuang         int       `db:"idruang"`
-	NamaRuang       string    `db:"namaruang"`
-	TglUjian        time.Time `db:"tglujian"`
-	TglSelesai      time.Time `db:"tglselesai"`
-	JamMulai        string    `db:"jammulai"`
-	JamSelesai      string    `db:"jamselesai"`
-	WaktuPengerjaan int       `db:"waktupengerjaan"`
-	TokenUjian      string    `db:"tokenujian"`
-	Kapasitas       int       `db:"kapasitas"`
-	ScheduleStatus  string     `db:"schedule_status"`
-	IsVerified      int        `db:"is_verified"`
+	IDJadwalUjian    int        `db:"idjadwalujian"`
+	IDUjian          int        `db:"idujian"`
+	NamaUjian        string     `db:"namaujian"`
+	KodeSoal         string     `db:"kodesoal"`
+	IDRuang          int        `db:"idruang"`
+	NamaRuang        string     `db:"namaruang"`
+	TglUjian         time.Time  `db:"tglujian"`
+	TglSelesai       time.Time  `db:"tglselesai"`
+	JamMulai         string     `db:"jammulai"`
+	JamSelesai       string     `db:"jamselesai"`
+	WaktuPengerjaan  int        `db:"waktupengerjaan"`
+	TokenUjian       string     `db:"tokenujian"`
+	Kapasitas        int        `db:"kapasitas"`
+	ScheduleStatus   string     `db:"schedule_status"`
+	IsVerified       int        `db:"is_verified"`
 	BarcodeScannedAt *time.Time `db:"barcode_scanned_at"`
-	ExamBarcode     string     `db:"exam_barcode"`
+	ExamBarcode      string     `db:"exam_barcode"`
 	HasStarted       bool       `db:"has_started"`
 	IsFinished       bool       `db:"is_finished"`
 	RemainingSeconds int        `db:"remaining_seconds"`

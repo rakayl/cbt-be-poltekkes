@@ -38,7 +38,7 @@ func NewIntegrationService(repo repository.IntegrationRepository) IntegrationSer
 func (s *integrationService) GenerateSecureAPIKey() string {
 	bytes := make([]byte, 20)
 	if _, err := rand.Read(bytes); err != nil {
-		return fmt.Sprintf("cbt_live_%d", hex.EncodeToString([]byte("fallback_key")))
+		return "cbt_live_" + hex.EncodeToString([]byte("fallback_key"))
 	}
 	return "cbt_live_" + hex.EncodeToString(bytes)
 }
@@ -263,4 +263,3 @@ func (s *integrationService) GetAccessLogs(ctx context.Context, apiKeyID int, pa
 
 	return res, pagination, nil
 }
-

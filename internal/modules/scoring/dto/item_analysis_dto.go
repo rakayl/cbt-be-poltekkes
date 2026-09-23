@@ -69,24 +69,24 @@ type BeritaAcaraParticipantRow struct {
 
 // BeritaAcaraResponseDTO represents official examination report data
 type BeritaAcaraResponseDTO struct {
-	ScheduleID        int                         `json:"schedule_id"`
-	ExamName          string                      `json:"exam_name"`
-	PeriodName        string                      `json:"period_name"`
-	RoomName          string                      `json:"room_name"`
-	ExamDate          string                      `json:"exam_date"`
-	StartTime         string                      `json:"start_time"`
-	EndTime           string                      `json:"end_time"`
-	PassingGrade      float64                     `json:"passing_grade"`
-	TotalRegistered   int                         `json:"total_registered"`
-	TotalAttended     int                         `json:"total_attended"`
-	TotalAbsent       int                         `json:"total_absent"`
-	TotalPassed       int                         `json:"total_passed"`
-	TotalFailed       int                         `json:"total_failed"`
-	PassPercentage    float64                     `json:"pass_percentage"`
-	HighestScore      float64                     `json:"highest_score"`
-	LowestScore       float64                     `json:"lowest_score"`
-	AverageScore      float64                     `json:"average_score"`
-	ProctorNotes      string                      `json:"proctor_notes"`
-	Supervisors       []string                    `json:"supervisors"`
-	Participants      []BeritaAcaraParticipantRow `json:"participants"`
+	ScheduleID      int                         `json:"schedule_id"`
+	ExamName        string                      `json:"exam_name"`
+	PeriodName      string                      `json:"period_name"`
+	RoomName        string                      `json:"room_name"`
+	ExamDate        string                      `json:"exam_date"`
+	StartTime       string                      `json:"start_time"`
+	EndTime         string                      `json:"end_time"`
+	PassingGrade    float64                     `json:"passing_grade"`
+	TotalRegistered int                         `json:"total_registered"`
+	TotalAttended   int                         `json:"total_attended"`
+	TotalAbsent     int                         `json:"total_absent"`
+	TotalPassed     int                         `json:"total_passed"`
+	TotalFailed     int                         `json:"total_failed"`
+	PassPercentage  float64                     `json:"pass_percentage"`
+	HighestScore    float64                     `json:"highest_score"`
+	LowestScore     float64                     `json:"lowest_score"`
+	AverageScore    float64                     `json:"average_score"`
+	ProctorNotes    string                      `json:"proctor_notes"`
+	Supervisors     []string                    `json:"supervisors"`
+	Participants    []BeritaAcaraParticipantRow `json:"participants"`
 }

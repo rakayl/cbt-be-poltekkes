@@ -3,9 +3,9 @@ package entity
 import "time"
 
 type SoalHeader struct {
-	KodeSoal       string    `db:"kodesoal"`
-	NamaSoal       string    `db:"namasoal"`
-	Keterangan     *string   `db:"keterangan"`
+	KodeSoal             string    `db:"kodesoal"`
+	NamaSoal             string    `db:"namasoal"`
+	Keterangan           *string   `db:"keterangan"`
 	TotalQuestions       int       `db:"total_questions"`
 	TotalQuestionsStatic int       `db:"total_questions_static"`
 	TotalStimuli         int       `db:"total_stimuli"`

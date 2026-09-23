@@ -3,9 +3,9 @@ package dto
 import "time"
 
 type QuestionBankResponseDTO struct {
-	QuestionBankCode string    `json:"question_bank_code"`
-	SubjectName      string    `json:"subject_name"`
-	Description      string    `json:"description"`
+	QuestionBankCode     string    `json:"question_bank_code"`
+	SubjectName          string    `json:"subject_name"`
+	Description          string    `json:"description"`
 	TotalQuestions       int       `json:"total_questions"`
 	TotalQuestionsStatic int       `json:"total_questions_static"`
 	TotalStimuli         int       `json:"total_stimuli"`

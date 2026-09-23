@@ -38,18 +38,18 @@ type ParticipantLoginResponseDTO struct {
 }
 
 type ParticipantSchedDTO struct {
-	ScheduleID       int    `json:"schedule_id"`
-	ExamID           int    `json:"exam_id"`
-	ExamName         string `json:"exam_name"`
-	QuestionBankCode string `json:"question_bank_code"`
-	RoomID           int    `json:"room_id"`
-	RoomName         string `json:"room_name"`
-	ExamDate         string `json:"exam_date"`
-	EndDate          string `json:"end_date"`
-	StartTime        string `json:"start_time"`
-	EndTime          string `json:"end_time"`
-	DurationMinutes  int    `json:"duration_minutes"`
-	SessionToken     string `json:"session_token"`
+	ScheduleID       int     `json:"schedule_id"`
+	ExamID           int     `json:"exam_id"`
+	ExamName         string  `json:"exam_name"`
+	QuestionBankCode string  `json:"question_bank_code"`
+	RoomID           int     `json:"room_id"`
+	RoomName         string  `json:"room_name"`
+	ExamDate         string  `json:"exam_date"`
+	EndDate          string  `json:"end_date"`
+	StartTime        string  `json:"start_time"`
+	EndTime          string  `json:"end_time"`
+	DurationMinutes  int     `json:"duration_minutes"`
+	SessionToken     string  `json:"session_token"`
 	Capacity         int     `json:"capacity"`
 	ScheduleStatus   string  `json:"schedule_status"`
 	IsVerified       int     `json:"is_verified"`

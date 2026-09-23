@@ -1309,4 +1309,3 @@ func (s *epService) ImportExternalParticipantsFromCSV(ctx context.Context, r io.
 
 	return s.repo.BatchImportExternalParticipants(ctx, list)
 }
-

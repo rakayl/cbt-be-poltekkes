@@ -28,21 +28,21 @@ type BankStimulus struct {
 
 // StimulusItem represents a sub-question under a stimulus
 type StimulusItem struct {
-	IDItem           int64      `db:"id_item" json:"id_item"`
-	IDStimulus       int64      `db:"id_stimulus" json:"id_stimulus"`
-	ItemOrder        int        `db:"item_order" json:"item_order"`
-	QuestionText     string     `db:"question_text" json:"question_text"`
-	QuestionMediaType string     `db:"question_media_type" json:"question_media_type"` // NONE, AUDIO, IMAGE, VIDEO
-	QuestionMediaURL *string    `db:"question_media_url" json:"question_media_url"`
-	ItemType         string     `db:"item_type" json:"item_type"` // SINGLE_CHOICE, MULTI_CHOICE
-	WeightCorrect    float64    `db:"weight_correct" json:"weight_correct"`
-	WeightWrong      float64    `db:"weight_wrong" json:"weight_wrong"`
-	WeightBlank      float64    `db:"weight_blank" json:"weight_blank"`
-	CorrectAnswer    string     `db:"correct_answer" json:"correct_answer"` // e.g. "A" or "1,3"
-	Explanation      *string    `db:"explanation" json:"explanation"`
-	SoftDelete       string     `db:"softdelete" json:"softdelete"`
-	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
+	IDItem            int64     `db:"id_item" json:"id_item"`
+	IDStimulus        int64     `db:"id_stimulus" json:"id_stimulus"`
+	ItemOrder         int       `db:"item_order" json:"item_order"`
+	QuestionText      string    `db:"question_text" json:"question_text"`
+	QuestionMediaType string    `db:"question_media_type" json:"question_media_type"` // NONE, AUDIO, IMAGE, VIDEO
+	QuestionMediaURL  *string   `db:"question_media_url" json:"question_media_url"`
+	ItemType          string    `db:"item_type" json:"item_type"` // SINGLE_CHOICE, MULTI_CHOICE
+	WeightCorrect     float64   `db:"weight_correct" json:"weight_correct"`
+	WeightWrong       float64   `db:"weight_wrong" json:"weight_wrong"`
+	WeightBlank       float64   `db:"weight_blank" json:"weight_blank"`
+	CorrectAnswer     string    `db:"correct_answer" json:"correct_answer"` // e.g. "A" or "1,3"
+	Explanation       *string   `db:"explanation" json:"explanation"`
+	SoftDelete        string    `db:"softdelete" json:"softdelete"`
+	CreatedAt         time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time `db:"updated_at" json:"updated_at"`
 
 	// Relational Options
 	Options []*ItemOption `json:"options,omitempty"`
@@ -90,18 +90,18 @@ type BlueprintRule struct {
 
 // ExamScheduleExt represents the extended time window and scoring configurations
 type ExamScheduleExt struct {
-	IDJadwalUjian             int        `db:"idjadwalujian" json:"idjadwalujian"`
-	IDBlueprint               *int64     `db:"id_blueprint" json:"id_blueprint"`
-	WindowStartTime           time.Time  `db:"window_start_time" json:"window_start_time"`
-	WindowEndTime             time.Time  `db:"window_end_time" json:"window_end_time"`
-	ScoringRule               string     `db:"scoring_rule" json:"scoring_rule"` // STANDARD, PENALTY_MINUS_ONE, CUSTOM
-	DefaultCorrectScore       float64    `db:"default_correct_score" json:"default_correct_score"`
-	DefaultWrongScore         float64    `db:"default_wrong_score" json:"default_wrong_score"`
-	DefaultBlankScore         float64    `db:"default_blank_score" json:"default_blank_score"`
-	AutoSubmitOnWindowEnd     bool       `db:"auto_submit_on_window_end" json:"auto_submit_on_window_end"`
-	Timezone                  string     `db:"timezone" json:"timezone"`
-	CreatedAt                 time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt                 time.Time  `db:"updated_at" json:"updated_at"`
+	IDJadwalUjian         int       `db:"idjadwalujian" json:"idjadwalujian"`
+	IDBlueprint           *int64    `db:"id_blueprint" json:"id_blueprint"`
+	WindowStartTime       time.Time `db:"window_start_time" json:"window_start_time"`
+	WindowEndTime         time.Time `db:"window_end_time" json:"window_end_time"`
+	ScoringRule           string    `db:"scoring_rule" json:"scoring_rule"` // STANDARD, PENALTY_MINUS_ONE, CUSTOM
+	DefaultCorrectScore   float64   `db:"default_correct_score" json:"default_correct_score"`
+	DefaultWrongScore     float64   `db:"default_wrong_score" json:"default_wrong_score"`
+	DefaultBlankScore     float64   `db:"default_blank_score" json:"default_blank_score"`
+	AutoSubmitOnWindowEnd bool      `db:"auto_submit_on_window_end" json:"auto_submit_on_window_end"`
+	Timezone              string    `db:"timezone" json:"timezone"`
+	CreatedAt             time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt             time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // ParticipantSessionExt represents the live participant exam session

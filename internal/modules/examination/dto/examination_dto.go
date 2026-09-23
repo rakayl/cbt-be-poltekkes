@@ -7,29 +7,29 @@ import (
 )
 
 type ExamResponseDTO struct {
-	ExamID       int     `json:"exam_id"`
-	ExamName     string  `json:"exam_name"`
-	PeriodID     int     `json:"period_id"`
-	PeriodName   string  `json:"period_name"`
-	PassingGrade float64 `json:"passing_grade"`
-	KodeJenis    string  `json:"kode_jenis"`
-	NamaJenis    string  `json:"nama_jenis"`
-	IDSatker     string  `json:"id_satker"`
-	NamaSatker   string  `json:"nama_satker"`
-	IsPercobaan  int     `json:"is_percobaan"`
-	Description  *string `json:"description,omitempty"`
-	MaxViolations int    `json:"max_violations"`
+	ExamID        int     `json:"exam_id"`
+	ExamName      string  `json:"exam_name"`
+	PeriodID      int     `json:"period_id"`
+	PeriodName    string  `json:"period_name"`
+	PassingGrade  float64 `json:"passing_grade"`
+	KodeJenis     string  `json:"kode_jenis"`
+	NamaJenis     string  `json:"nama_jenis"`
+	IDSatker      string  `json:"id_satker"`
+	NamaSatker    string  `json:"nama_satker"`
+	IsPercobaan   int     `json:"is_percobaan"`
+	Description   *string `json:"description,omitempty"`
+	MaxViolations int     `json:"max_violations"`
 }
 
 type CreateExamRequestDTO struct {
-	PeriodID     int     `json:"period_id" binding:"required"`
-	ExamName     string  `json:"exam_name" binding:"required"`
-	KodeJenis    string  `json:"kode_jenis"`
-	IDSatker     string  `json:"id_satker"`
-	PassingGrade float64 `json:"passing_grade"`
-	IsPercobaan  int     `json:"is_percobaan"`
-	Description  string  `json:"description"`
-	MaxViolations int    `json:"max_violations"`
+	PeriodID      int     `json:"period_id" binding:"required"`
+	ExamName      string  `json:"exam_name" binding:"required"`
+	KodeJenis     string  `json:"kode_jenis"`
+	IDSatker      string  `json:"id_satker"`
+	PassingGrade  float64 `json:"passing_grade"`
+	IsPercobaan   int     `json:"is_percobaan"`
+	Description   string  `json:"description"`
+	MaxViolations int     `json:"max_violations"`
 }
 
 type UpdateExamRequestDTO struct {
@@ -44,18 +44,18 @@ type UpdateExamRequestDTO struct {
 }
 
 type CreateScheduleRequestDTO struct {
-	ExamID              int     `json:"exam_id"`
-	NoJadwal            int     `json:"no_jadwal"`
-	WaktuPengerjaan     int     `json:"waktu_pengerjaan" binding:"required"`
-	Bobot               float64 `json:"bobot"`
-	TampilkanNilai      int     `json:"tampilkan_nilai"`
-	ExamDeadlineAt      *string `json:"exam_deadline_at,omitempty"`
-	GracePeriodSeconds  int     `json:"grace_period_seconds"`
-	TglMulai            string  `json:"tgl_mulai"`
-	TglSelesai          string  `json:"tgl_selesai"`
-	WaktuMulai          string  `json:"waktu_mulai"`
-	WaktuSelesai        string  `json:"waktu_selesai"`
-	MaxViolations       int     `json:"max_violations"`
+	ExamID             int     `json:"exam_id"`
+	NoJadwal           int     `json:"no_jadwal"`
+	WaktuPengerjaan    int     `json:"waktu_pengerjaan" binding:"required"`
+	Bobot              float64 `json:"bobot"`
+	TampilkanNilai     int     `json:"tampilkan_nilai"`
+	ExamDeadlineAt     *string `json:"exam_deadline_at,omitempty"`
+	GracePeriodSeconds int     `json:"grace_period_seconds"`
+	TglMulai           string  `json:"tgl_mulai"`
+	TglSelesai         string  `json:"tgl_selesai"`
+	WaktuMulai         string  `json:"waktu_mulai"`
+	WaktuSelesai       string  `json:"waktu_selesai"`
+	MaxViolations      int     `json:"max_violations"`
 }
 
 type UpdateSessionRequestDTO struct {
@@ -218,15 +218,15 @@ type AutoDistributeResponseDTO struct {
 }
 
 type RoomParticipantDTO struct {
-	ParticipantCode string  `json:"participant_code"`
-	Name            string  `json:"name"`
-	Email           *string `json:"email,omitempty"`
-	CityName        *string `json:"city_name,omitempty"`
-	SessionID       int     `json:"session_id"`
-	RoomSessionID   int     `json:"room_session_id"`
-	RoomName        string  `json:"room_name"`
-	IsLoggedIn      int     `json:"is_logged_in"`
-	IsVerified      int     `json:"is_verified"`
+	ParticipantCode  string  `json:"participant_code"`
+	Name             string  `json:"name"`
+	Email            *string `json:"email,omitempty"`
+	CityName         *string `json:"city_name,omitempty"`
+	SessionID        int     `json:"session_id"`
+	RoomSessionID    int     `json:"room_session_id"`
+	RoomName         string  `json:"room_name"`
+	IsLoggedIn       int     `json:"is_logged_in"`
+	IsVerified       int     `json:"is_verified"`
 	BarcodeScannedAt *string `json:"barcode_scanned_at,omitempty"`
 }
 
@@ -234,25 +234,23 @@ type AddRoomParticipantRequestDTO struct {
 	ParticipantCodes []string `json:"participant_codes" binding:"required"`
 }
 
-
-
 type ExamParticipantDTO struct {
-	ParticipantCode string   `json:"participant_code"`
-	Name            string   `json:"name"`
-	Email           *string  `json:"email,omitempty"`
-	CityName        *string  `json:"city_name,omitempty"`
-	Score           *float64 `json:"score,omitempty"`
-	IsLoggedIn      int      `json:"is_logged_in"`
-	IsPlotted       bool     `json:"is_plotted"`
-	SessionNumber   *int     `json:"session_number,omitempty"`
-	RoomName        *string  `json:"room_name,omitempty"`
-	TglMulai        *string  `json:"tgl_mulai,omitempty"`
-	Hari            *string  `json:"hari,omitempty"`
-	WaktuMulai      *string  `json:"waktu_mulai,omitempty"`
-	WaktuSelesai    *string  `json:"waktu_selesai,omitempty"`
-	IsVerified      int      `json:"is_verified"`
-	BarcodeScannedAt *string `json:"barcode_scanned_at,omitempty"`
-	ScannedBy       *string  `json:"scanned_by,omitempty"`
+	ParticipantCode  string   `json:"participant_code"`
+	Name             string   `json:"name"`
+	Email            *string  `json:"email,omitempty"`
+	CityName         *string  `json:"city_name,omitempty"`
+	Score            *float64 `json:"score,omitempty"`
+	IsLoggedIn       int      `json:"is_logged_in"`
+	IsPlotted        bool     `json:"is_plotted"`
+	SessionNumber    *int     `json:"session_number,omitempty"`
+	RoomName         *string  `json:"room_name,omitempty"`
+	TglMulai         *string  `json:"tgl_mulai,omitempty"`
+	Hari             *string  `json:"hari,omitempty"`
+	WaktuMulai       *string  `json:"waktu_mulai,omitempty"`
+	WaktuSelesai     *string  `json:"waktu_selesai,omitempty"`
+	IsVerified       int      `json:"is_verified"`
+	BarcodeScannedAt *string  `json:"barcode_scanned_at,omitempty"`
+	ScannedBy        *string  `json:"scanned_by,omitempty"`
 }
 
 type ParticipantScheduleDTO struct {
@@ -440,15 +438,15 @@ type ProctorActionRequestDTO struct {
 }
 
 type LiveMonitoringParticipantDTO struct {
-	ParticipantCode     string  `json:"participant_code"`
-	Name                string  `json:"name"`
-	DeskNumber          int     `json:"desk_number"`
-	ExamStatus          string  `json:"exam_status"`
-	TotalQuestions      int     `json:"total_questions"`
-	AnsweredCount       int     `json:"answered_count"`
-	RemainingSeconds    int     `json:"remaining_seconds"`
-	ConnectionStatus    string  `json:"connection_status"`
-	LastActivity        string  `json:"last_activity"`
+	ParticipantCode           string  `json:"participant_code"`
+	Name                      string  `json:"name"`
+	DeskNumber                int     `json:"desk_number"`
+	ExamStatus                string  `json:"exam_status"`
+	TotalQuestions            int     `json:"total_questions"`
+	AnsweredCount             int     `json:"answered_count"`
+	RemainingSeconds          int     `json:"remaining_seconds"`
+	ConnectionStatus          string  `json:"connection_status"`
+	LastActivity              string  `json:"last_activity"`
 	RiskScore                 int     `json:"risk_score"`
 	RiskLevel                 string  `json:"risk_level"`
 	TabSwitchCount            int     `json:"tab_switch_count"`
@@ -458,12 +456,12 @@ type LiveMonitoringParticipantDTO struct {
 	TotalViolations           int     `json:"total_violations"`
 	UnlockCount               int     `json:"unlock_count"`
 	DisconnectCount           int     `json:"disconnect_count"`
-	ReconnectCount      int     `json:"reconnect_count"`
-	IsLocked            int     `json:"is_locked"`
-	LockReason          *string `json:"lock_reason,omitempty"`
-	ProctorWarning      *string `json:"proctor_warning,omitempty"`
-	IsVerified          int     `json:"is_verified"`
-	BarcodeScannedAt    *string `json:"barcode_scanned_at,omitempty"`
+	ReconnectCount            int     `json:"reconnect_count"`
+	IsLocked                  int     `json:"is_locked"`
+	LockReason                *string `json:"lock_reason,omitempty"`
+	ProctorWarning            *string `json:"proctor_warning,omitempty"`
+	IsVerified                int     `json:"is_verified"`
+	BarcodeScannedAt          *string `json:"barcode_scanned_at,omitempty"`
 }
 
 type AttendanceStatsDTO struct {
@@ -653,31 +651,31 @@ type AddBankSoalToSessionDTO struct {
 // === Completed Participants & Detailed Review DTOs ===
 
 type CompletedParticipantDTO struct {
-	ParticipantCode     string   `json:"participant_code"`
-	Name                string   `json:"name"`
-	Email               *string  `json:"email"`
-	ScheduleID          int      `json:"schedule_id"`
-	SessionNumber       int      `json:"session_number"`
-	RoomName            string   `json:"room_name"`
-	StartedAt           *string  `json:"started_at"`
-	FinishedAt          *string  `json:"finished_at"`
-	DurationMinutes     int      `json:"duration_minutes"`
-	FinalScore          float64  `json:"final_score"`
-	PassingStatus       string   `json:"passing_status"` // "LULUS" / "TIDAK LULUS"
-	RiskScore           int      `json:"risk_score"`
-	RiskLevel           string   `json:"risk_level"`
-	TabSwitchCount      int      `json:"tab_switch_count"`
-	FullscreenExitCount int      `json:"fullscreen_exit_count"`
-	TotalViolations     int      `json:"total_violations"`
-	UnlockCount         int      `json:"unlock_count"`
-	DisconnectCount     int      `json:"disconnect_count"`
-	IsLocked            int      `json:"is_locked"`
-	LockReason          *string  `json:"lock_reason"`
-	TotalAnswered       int      `json:"total_answered"`
-	CorrectCount        int      `json:"correct_count"`
-	WrongCount          int      `json:"wrong_count"`
-	EmptyCount          int      `json:"empty_count"`
-	IsVerified          int      `json:"is_verified"`
+	ParticipantCode     string  `json:"participant_code"`
+	Name                string  `json:"name"`
+	Email               *string `json:"email"`
+	ScheduleID          int     `json:"schedule_id"`
+	SessionNumber       int     `json:"session_number"`
+	RoomName            string  `json:"room_name"`
+	StartedAt           *string `json:"started_at"`
+	FinishedAt          *string `json:"finished_at"`
+	DurationMinutes     int     `json:"duration_minutes"`
+	FinalScore          float64 `json:"final_score"`
+	PassingStatus       string  `json:"passing_status"` // "LULUS" / "TIDAK LULUS"
+	RiskScore           int     `json:"risk_score"`
+	RiskLevel           string  `json:"risk_level"`
+	TabSwitchCount      int     `json:"tab_switch_count"`
+	FullscreenExitCount int     `json:"fullscreen_exit_count"`
+	TotalViolations     int     `json:"total_violations"`
+	UnlockCount         int     `json:"unlock_count"`
+	DisconnectCount     int     `json:"disconnect_count"`
+	IsLocked            int     `json:"is_locked"`
+	LockReason          *string `json:"lock_reason"`
+	TotalAnswered       int     `json:"total_answered"`
+	CorrectCount        int     `json:"correct_count"`
+	WrongCount          int     `json:"wrong_count"`
+	EmptyCount          int     `json:"empty_count"`
+	IsVerified          int     `json:"is_verified"`
 }
 
 type QuestionOptionReviewDTO struct {
@@ -756,8 +754,8 @@ type ParticipantExamResultDetailDTO struct {
 		TotalViolations           int                    `json:"total_violations"`
 		UnlockCount               int                    `json:"unlock_count"`
 		DisconnectCount           int                    `json:"disconnect_count"`
-		ReconnectCount      int                    `json:"reconnect_count"`
-		Events              []SecurityEventItemDTO `json:"events"`
+		ReconnectCount            int                    `json:"reconnect_count"`
+		Events                    []SecurityEventItemDTO `json:"events"`
 	} `json:"violations"`
 
 	// 4. Soal dan Jawaban Peserta
@@ -785,4 +783,3 @@ type ParticipantExamSummaryDTO struct {
 	TotalAnswered   int     `json:"total_answered"`
 	TotalQuestions  int     `json:"total_questions"`
 }
-

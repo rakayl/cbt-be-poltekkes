@@ -28,4 +28,3 @@ type APIAccessLog struct {
 	ErrorMessage   *string   `db:"error_message" json:"error_message"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
-

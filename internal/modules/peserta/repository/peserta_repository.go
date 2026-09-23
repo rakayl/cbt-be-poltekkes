@@ -524,8 +524,8 @@ func (r *pesertaRepository) ImportSipenmaruCandidates(ctx context.Context, req *
 
 		// Double check in database inside loop to avoid concurrency race
 		var existingKode string
-		checkErr := r.db.GetContext(ctx, &existingKode, 
-			"SELECT kodepeserta FROM cat.at_peserta WHERE idpendaftar = $1 AND (softdelete = '0' OR softdelete IS NULL)", 
+		checkErr := r.db.GetContext(ctx, &existingKode,
+			"SELECT kodepeserta FROM cat.at_peserta WHERE idpendaftar = $1 AND (softdelete = '0' OR softdelete IS NULL)",
 			c.IDPendaftar)
 		if checkErr == nil && existingKode != "" {
 			resp.SkippedCount++
@@ -642,8 +642,8 @@ func (r *pesertaRepository) ImportSipenmaruCandidates(ctx context.Context, req *
 
 		// Update noujian in pendaftaran.pd_pendaftar if empty
 		if c.NoUjianSipenmaru == "" {
-			_, _ = r.siakadDB.ExecContext(ctx, 
-				"UPDATE pendaftaran.pd_pendaftar SET noujian = $1 WHERE idpendaftar = $2 AND (noujian IS NULL OR noujian = '')", 
+			_, _ = r.siakadDB.ExecContext(ctx,
+				"UPDATE pendaftaran.pd_pendaftar SET noujian = $1 WHERE idpendaftar = $2 AND (noujian IS NULL OR noujian = '')",
 				noujian, c.IDPendaftar)
 		}
 
@@ -657,4 +657,3 @@ func (r *pesertaRepository) ImportSipenmaruCandidates(ctx context.Context, req *
 
 	return resp, nil
 }
-

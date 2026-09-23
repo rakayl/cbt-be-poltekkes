@@ -3,33 +3,33 @@ package entity
 import "time"
 
 type Ujian struct {
-	IDUjian      int      `db:"idujian"`
-	NamaUjian    string   `db:"namaujian"`
-	IDPeriode    int      `db:"idperiode"`
-	NamaPeriode  string   `db:"namaperiode"`
-	NilaiMinimal *float64 `db:"nilaiminimal"`
-	IDSatker     string   `db:"idsatker"`
-	NamaSatker   string   `db:"namasatker"`
-	KodeJenis    string   `db:"kodejenis"`
-	NamaJenis    string   `db:"namajenis"`
-	IsPercobaan  int      `db:"ispercobaan"`
-	Keterangan   *string  `db:"keterangan"`
-	SoftDelete   string   `db:"softdelete"`
-	MaxViolations int     `db:"max_violations"`
+	IDUjian       int      `db:"idujian"`
+	NamaUjian     string   `db:"namaujian"`
+	IDPeriode     int      `db:"idperiode"`
+	NamaPeriode   string   `db:"namaperiode"`
+	NilaiMinimal  *float64 `db:"nilaiminimal"`
+	IDSatker      string   `db:"idsatker"`
+	NamaSatker    string   `db:"namasatker"`
+	KodeJenis     string   `db:"kodejenis"`
+	NamaJenis     string   `db:"namajenis"`
+	IsPercobaan   int      `db:"ispercobaan"`
+	Keterangan    *string  `db:"keterangan"`
+	SoftDelete    string   `db:"softdelete"`
+	MaxViolations int      `db:"max_violations"`
 }
 
 type ExamParticipant struct {
-	KodePeserta        string   `db:"kodepeserta"`
-	Nama               string   `db:"nama"`
-	Email              *string  `db:"email"`
-	NamaWilayah        *string  `db:"namawilayah"`
-	Nilai              *float64 `db:"nilai"`
-	IsLoggedIn         int      `db:"isloggedin"`
-	IsPlotted          int      `db:"is_plotted"`
-	SessionNumber      *int     `db:"session_number"`
-	RoomName           *string  `db:"room_name"`
-	TglMulai           *string  `db:"tgl_mulai"`
-	WaktuMulai         *string  `db:"waktu_mulai"`
+	KodePeserta        string     `db:"kodepeserta"`
+	Nama               string     `db:"nama"`
+	Email              *string    `db:"email"`
+	NamaWilayah        *string    `db:"namawilayah"`
+	Nilai              *float64   `db:"nilai"`
+	IsLoggedIn         int        `db:"isloggedin"`
+	IsPlotted          int        `db:"is_plotted"`
+	SessionNumber      *int       `db:"session_number"`
+	RoomName           *string    `db:"room_name"`
+	TglMulai           *string    `db:"tgl_mulai"`
+	WaktuMulai         *string    `db:"waktu_mulai"`
 	WaktuSelesai       *string    `db:"waktu_selesai"`
 	WaktuPengerjaanStr *string    `db:"waktupengerjaan_str"`
 	IsVerified         int        `db:"is_verified"`
@@ -56,14 +56,14 @@ type JadwalUjian struct {
 }
 
 type LiveMonitorRow struct {
-	KodePeserta         string     `db:"kodepeserta"`
-	Nama                string     `db:"nama"`
-	NoUrutPeserta       int        `db:"nourutpeserta"`
-	StatusUjian         string     `db:"statusujian"`
-	TotalQuestions      int        `db:"total_questions"`
-	JumlahTerjawab      int        `db:"jumlahterjawab"`
-	RiskScore           int        `db:"risk_score"`
-	RiskLevel           string     `db:"risk_level"`
+	KodePeserta               string     `db:"kodepeserta"`
+	Nama                      string     `db:"nama"`
+	NoUrutPeserta             int        `db:"nourutpeserta"`
+	StatusUjian               string     `db:"statusujian"`
+	TotalQuestions            int        `db:"total_questions"`
+	JumlahTerjawab            int        `db:"jumlahterjawab"`
+	RiskScore                 int        `db:"risk_score"`
+	RiskLevel                 string     `db:"risk_level"`
 	TabSwitchCount            int        `db:"tab_switch_count"`
 	FullscreenExitCount       int        `db:"fullscreen_exit_count"`
 	ActiveTabSwitchCount      int        `db:"active_tab_switch_count"`
@@ -162,15 +162,15 @@ type AvailableParticipant struct {
 
 // RoomParticipantRow represents a participant assigned to a specific room & session
 type RoomParticipantRow struct {
-	KodePeserta   string   `db:"kodepeserta"`
-	Nama          string   `db:"nama"`
-	Email         *string  `db:"email"`
-	NamaWilayah   *string  `db:"namawilayah"`
-	IDJadwalUjian int      `db:"idjadwalujian"`
-	IDRuangUjian  int      `db:"idruangujian"`
-	NamaRuang     string     `db:"namaruang"`
-	IsLogin       int        `db:"islogin"`
-	IsVerified    int        `db:"is_verified"`
+	KodePeserta      string     `db:"kodepeserta"`
+	Nama             string     `db:"nama"`
+	Email            *string    `db:"email"`
+	NamaWilayah      *string    `db:"namawilayah"`
+	IDJadwalUjian    int        `db:"idjadwalujian"`
+	IDRuangUjian     int        `db:"idruangujian"`
+	NamaRuang        string     `db:"namaruang"`
+	IsLogin          int        `db:"islogin"`
+	IsVerified       int        `db:"is_verified"`
 	BarcodeScannedAt *time.Time `db:"barcode_scanned_at"`
 }
 
@@ -189,4 +189,3 @@ type SoalUjian struct {
 	TotalStatisAvailable   int     `db:"total_statis_available"`
 	TotalStimulusAvailable int     `db:"total_stimulus_available"`
 }
-

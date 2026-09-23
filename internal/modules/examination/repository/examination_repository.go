@@ -33,7 +33,7 @@ type ExaminationRepository interface {
 	SaveAnswer(ctx context.Context, participantCode string, scheduleID int, questionBankCode string, questionNumber int, selectedOption int, isDoubtful bool) error
 	GetLiveMonitoring(ctx context.Context, scheduleID int) ([]*entity.LiveMonitorRow, error)
 	FinishExam(ctx context.Context, participantCode string, scheduleID int, submitReason string) (*entity.JadwalUjian, int, int, int, int, float64, string, error)
-	
+
 	// Security & Anti-Cheat Methods
 	RecordSecurityEvent(ctx context.Context, event *entity.SecurityEvent) (*dto.SecurityEventResponseDTO, error)
 	GetRecentSecurityEvents(ctx context.Context, scheduleID int, limit int) ([]*entity.SecurityEvent, error)
@@ -287,7 +287,6 @@ func (r *examinationRepository) DeleteExam(ctx context.Context, examID int) erro
 	return err
 }
 
-
 func (r *examinationRepository) GetSchedules(ctx context.Context, examID, periodID int) ([]*entity.JadwalUjian, error) {
 	query := `
 		SELECT j.idjadwalujian, j.idujian, u.namaujian, 
@@ -392,7 +391,6 @@ func (r *examinationRepository) StartExam(ctx context.Context, participantCode s
 	if prevRow.TglSelesai != nil {
 		return nil, 0, "", fmt.Errorf("ujian ini sudah pernah dikerjakan dan dikumpulkan. Anda tidak dapat mengulang ujian yang sama")
 	}
-
 
 	// ALWAYS validate session token (even when resuming) for security
 	if sched.TokenUjian != "" {
@@ -813,11 +811,21 @@ func (r *examinationRepository) buildAndSaveSessionSnapshot(ctx context.Context,
 					for oIdx, op := range itemOpts {
 						key := oIdx + 1
 						cleanLabel := strings.ToUpper(strings.TrimSpace(op.OptionLabel))
-						if cleanLabel == "A" { key = 1 }
-						if cleanLabel == "B" { key = 2 }
-						if cleanLabel == "C" { key = 3 }
-						if cleanLabel == "D" { key = 4 }
-						if cleanLabel == "E" { key = 5 }
+						if cleanLabel == "A" {
+							key = 1
+						}
+						if cleanLabel == "B" {
+							key = 2
+						}
+						if cleanLabel == "C" {
+							key = 3
+						}
+						if cleanLabel == "D" {
+							key = 4
+						}
+						if cleanLabel == "E" {
+							key = 5
+						}
 
 						if cleanCorrect == cleanLabel || cleanCorrect == fmt.Sprintf("%d", key) {
 							correctKey = key
@@ -837,10 +845,18 @@ func (r *examinationRepository) buildAndSaveSessionSnapshot(ctx context.Context,
 						{OptionKey: 4, OptionText: "Pilihan D"},
 						{OptionKey: 5, OptionText: "Pilihan E"},
 					}
-					if cleanCorrect == "B" { correctKey = 2 }
-					if cleanCorrect == "C" { correctKey = 3 }
-					if cleanCorrect == "D" { correctKey = 4 }
-					if cleanCorrect == "E" { correctKey = 5 }
+					if cleanCorrect == "B" {
+						correctKey = 2
+					}
+					if cleanCorrect == "C" {
+						correctKey = 3
+					}
+					if cleanCorrect == "D" {
+						correctKey = 4
+					}
+					if cleanCorrect == "E" {
+						correctKey = 5
+					}
 				}
 
 				stimID := d.IDStimulus
@@ -2222,7 +2238,7 @@ func (r *examinationRepository) GetDynamicExamSession(ctx context.Context, parti
 		WHERE idjadwalujian = $1 AND kodepeserta = $2
 	`
 	err = r.db.GetContext(ctx, &sess, sessQuery, scheduleID, participantCode)
-	
+
 	// If already submitted -> Lock permanently
 	if err == nil && (sess.SessionStatus == "SUBMITTED" || sess.CompletedAt != nil) {
 		return nil, fmt.Errorf("Anda telah menyelesaikan ujian ini pada %s. Lembar ujian telah dikunci permanen", sess.CompletedAt.In(locJakarta).Format("02 Jan 2006 15:04 WIB"))
@@ -4232,7 +4248,7 @@ func (r *examinationRepository) ImportSipenmaruToExam(ctx context.Context, examI
 						idpendaftar = EXCLUDED.idpendaftar,
 						softdelete = '0'
 				`, kodepeserta, cbtPeriodID, c.Nama, c.JK, c.HP, c.Email, c.Alamat, c.IDKota,
-				   hashedPassword, kodepeserta, c.IDPendaftar, c.IDPendaftar)
+					hashedPassword, kodepeserta, c.IDPendaftar, c.IDPendaftar)
 				if insErr != nil {
 					resp.ErrorCount++
 					resp.Errors = append(resp.Errors, fmt.Sprintf("%s (%s): %v", c.Nama, c.IDPendaftar, insErr))
@@ -5146,28 +5162,28 @@ func (r *examinationRepository) GetParticipantExamResultDetail(ctx context.Conte
 	}
 
 	type rawQuestionRow struct {
-		NoUrut          int      `db:"nourut"`
-		Pertanyaan      string   `db:"pertanyaan"`
-		Pertanyaan2     string   `db:"pertanyaan2"`
-		PertanyaanImage *string  `db:"pertanyaanimage"`
-		PertanyaanAudio *string  `db:"pertanyaanaudio"`
-		PertanyaanVideo *string  `db:"pertanyaanvideo"`
-		Jawaban1        string   `db:"jawaban1"`
-		Jawaban1Image   *string  `db:"jawaban1image"`
-		Jawaban2        string   `db:"jawaban2"`
-		Jawaban2Image   *string  `db:"jawaban2image"`
-		Jawaban3        string   `db:"jawaban3"`
-		Jawaban3Image   *string  `db:"jawaban3image"`
-		Jawaban4        string   `db:"jawaban4"`
-		Jawaban4Image   *string  `db:"jawaban4image"`
-		Jawaban5        string   `db:"jawaban5"`
-		Jawaban5Image   *string  `db:"jawaban5image"`
-		JawabanBenar    int      `db:"jawabanbenar"`
-		BobotBenar      float64  `db:"bobot_benar"`
-		BobotSalah      float64  `db:"bobot_salah"`
-		JawabanPilih    int      `db:"jawabanpilih"`
-		IsBenar         int      `db:"isbenar"`
-		Nilai           float64  `db:"nilai"`
+		NoUrut          int     `db:"nourut"`
+		Pertanyaan      string  `db:"pertanyaan"`
+		Pertanyaan2     string  `db:"pertanyaan2"`
+		PertanyaanImage *string `db:"pertanyaanimage"`
+		PertanyaanAudio *string `db:"pertanyaanaudio"`
+		PertanyaanVideo *string `db:"pertanyaanvideo"`
+		Jawaban1        string  `db:"jawaban1"`
+		Jawaban1Image   *string `db:"jawaban1image"`
+		Jawaban2        string  `db:"jawaban2"`
+		Jawaban2Image   *string `db:"jawaban2image"`
+		Jawaban3        string  `db:"jawaban3"`
+		Jawaban3Image   *string `db:"jawaban3image"`
+		Jawaban4        string  `db:"jawaban4"`
+		Jawaban4Image   *string `db:"jawaban4image"`
+		Jawaban5        string  `db:"jawaban5"`
+		Jawaban5Image   *string `db:"jawaban5image"`
+		JawabanBenar    int     `db:"jawabanbenar"`
+		BobotBenar      float64 `db:"bobot_benar"`
+		BobotSalah      float64 `db:"bobot_salah"`
+		JawabanPilih    int     `db:"jawabanpilih"`
+		IsBenar         int     `db:"isbenar"`
+		Nilai           float64 `db:"nilai"`
 	}
 
 	rawQ := `
@@ -5429,9 +5445,9 @@ func (r *examinationRepository) getEPParticipantExamResultDetail(ctx context.Con
 
 	// Fetch all exam sections
 	type secRow struct {
-		IDSection       int    `db:"id_section"`
-		KodeSoal        string `db:"kodesoal"`
-		SectionOrder    int    `db:"section_order"`
+		IDSection    int    `db:"id_section"`
+		KodeSoal     string `db:"kodesoal"`
+		SectionOrder int    `db:"section_order"`
 	}
 	var sections []secRow
 	_ = r.db.SelectContext(ctx, &sections, `
@@ -5633,15 +5649,15 @@ func (r *examinationRepository) getEPParticipantExamResultDetail(ctx context.Con
 
 	// Fetch score from ep_scores
 	var epScore struct {
-		ListeningRaw     int       `db:"listening_raw"`
-		ListeningScaled  int       `db:"listening_scaled"`
-		StructureRaw     int       `db:"structure_raw"`
-		StructureScaled  int       `db:"structure_scaled"`
-		ReadingRaw       int       `db:"reading_raw"`
-		ReadingScaled    int       `db:"reading_scaled"`
-		TotalScaledScore int       `db:"total_scaled_score"`
-		CEFRLevel        string    `db:"cefr_level"`
-		PassingStatus    string    `db:"passing_status"`
+		ListeningRaw     int    `db:"listening_raw"`
+		ListeningScaled  int    `db:"listening_scaled"`
+		StructureRaw     int    `db:"structure_raw"`
+		StructureScaled  int    `db:"structure_scaled"`
+		ReadingRaw       int    `db:"reading_raw"`
+		ReadingScaled    int    `db:"reading_scaled"`
+		TotalScaledScore int    `db:"total_scaled_score"`
+		CEFRLevel        string `db:"cefr_level"`
+		PassingStatus    string `db:"passing_status"`
 	}
 	scoreQ := `
 		SELECT listening_raw, listening_scaled, structure_raw, structure_scaled, reading_raw, reading_scaled, total_scaled_score, cefr_level, passing_status
@@ -5747,5 +5763,3 @@ func (r *examinationRepository) getEPParticipantExamResultDetail(ctx context.Con
 
 	return result, nil
 }
-
-

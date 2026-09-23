@@ -244,4 +244,3 @@ func (h *BankSoalHandler) UploadMedia(c *gin.Context) {
 		"file_ext":      ext,
 	})
 }
-

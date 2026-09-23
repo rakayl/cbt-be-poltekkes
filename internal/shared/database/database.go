@@ -73,4 +73,3 @@ func NewSiakadConnection(cfg *config.Config, primaryDB *sqlx.DB) *sqlx.DB {
 	log.Printf("✅ PostgreSQL SIAKAD Database Connection Pool (%s@%s:%s/%s) initialized successfully", cfg.DBSiakadUser, cfg.DBSiakadHost, cfg.DBSiakadPort, cfg.DBSiakadName)
 	return db
 }
-
