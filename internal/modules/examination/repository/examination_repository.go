@@ -517,7 +517,7 @@ func (r *examinationRepository) buildAndSaveSessionSnapshot(ctx context.Context,
 	if participantState.RemainingSeconds != nil && *participantState.RemainingSeconds > 0 {
 		remainingSec = *participantState.RemainingSeconds
 	} else if participantState.TglMulai != nil {
-		elapsed := int(time.Now().Sub(*participantState.TglMulai).Seconds())
+		elapsed := int(time.Since(*participantState.TglMulai).Seconds())
 		remainingSec = durationSec - elapsed
 		if remainingSec < 0 {
 			remainingSec = 0
@@ -1827,7 +1827,7 @@ func (r *examinationRepository) FinishExam(ctx context.Context, participantCode 
 	if err != nil {
 		return nil, 0, 0, 0, 0, 0, "", err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var existingCheck struct {
 		TglSelesai      *time.Time     `db:"tglselesai"`
@@ -2537,7 +2537,7 @@ func (r *examinationRepository) FinishDynamicExam(ctx context.Context, participa
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var sess entity.ParticipantSessionExt
 	err = tx.GetContext(ctx, &sess, `
@@ -3311,7 +3311,7 @@ func (r *examinationRepository) AutoDistributeParticipants(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	totalAssigned := 0
 	unassignedCount := 0
@@ -3421,7 +3421,7 @@ func (r *examinationRepository) AddRoomParticipants(ctx context.Context, roomSes
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// 1. Statement untuk menghapus alokasi sesi lama pada paket ujian ini (mencegah double sesi)
 	delStmt, err := tx.PreparexContext(ctx, `
@@ -4094,7 +4094,6 @@ func (r *examinationRepository) ImportSipenmaruToExam(ctx context.Context, examI
 	if req.IDGelombang > 0 {
 		conditions = append(conditions, fmt.Sprintf("p.idgelombang = $%d", argIdx))
 		args = append(args, req.IDGelombang)
-		argIdx++
 	}
 	if req.OnlyAdministrasi {
 		conditions = append(conditions, "p.isadministrasi = 1")
@@ -4927,7 +4926,7 @@ func (r *examinationRepository) GetParticipantExamResultDetail(ctx context.Conte
 				wWrng := q.WeightWrong
 				totalWeight += wCorr
 
-				status := "EMPTY"
+				var status string
 				score := 0.0
 				if !answered || ans.Jawaban == 0 {
 					status = "EMPTY"
@@ -5224,7 +5223,7 @@ func (r *examinationRepository) GetParticipantExamResultDetail(ctx context.Conte
 			userKey = letterMap[qr.JawabanPilih]
 		}
 
-		status := "EMPTY"
+		var status string
 		score := 0.0
 		if qr.JawabanPilih == 0 {
 			status = "EMPTY"

@@ -123,7 +123,7 @@ func (r *dynamicBankSoalRepository) CreateStimulus(ctx context.Context, req *dto
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	code := req.StimulusCode
 	if code == "" {
@@ -189,7 +189,7 @@ func (r *dynamicBankSoalRepository) UpdateStimulus(ctx context.Context, id int64
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	metaJSON, _ := json.Marshal(req.MediaMetadata)
 	updateStimulusQ := `
@@ -295,7 +295,7 @@ func (r *dynamicBankSoalRepository) CreateBlueprint(ctx context.Context, req *dt
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var idBP int64
 	insertBP := `

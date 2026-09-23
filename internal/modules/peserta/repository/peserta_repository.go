@@ -399,7 +399,6 @@ func (r *pesertaRepository) GetSipenmaruCandidates(ctx context.Context, req *dto
 	if req.IDGelombang > 0 {
 		conditions = append(conditions, fmt.Sprintf("p.idgelombang = $%d", argIdx))
 		args = append(args, req.IDGelombang)
-		argIdx++
 	}
 	if req.OnlyAdministrasi {
 		conditions = append(conditions, "p.isadministrasi = 1")

@@ -1,0 +1,21 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - ineffassign
+    - staticcheck
+    - unused
+    - govet
+
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - (*database/sql.Tx).Rollback
+      - (*github.com/jmoiron/sqlx.Tx).Rollback
+
+issues:
+  exclude-dirs:
+    - vendor

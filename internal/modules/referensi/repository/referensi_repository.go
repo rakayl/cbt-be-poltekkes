@@ -147,7 +147,7 @@ func (r *referensiRepository) SalinSoal(ctx context.Context, sumberKode, targetK
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// 1. Insert or update header soal
 	insertHeader := `

@@ -163,7 +163,7 @@ func (r *bankSoalRepository) DeleteQuestionBank(ctx context.Context, code string
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Soft delete question bank
 	_, err = tx.ExecContext(ctx, `UPDATE cat.at_soal SET softdelete = '1', t_updatetime = NOW() WHERE kodesoal = $1`, code)
@@ -185,7 +185,7 @@ func (r *bankSoalRepository) CopyQuestionBank(ctx context.Context, sourceCode, n
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// 1. Create header
 	insHeader := `
