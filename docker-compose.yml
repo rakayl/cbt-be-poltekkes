@@ -1,0 +1,42 @@
+# ==============================================================================
+# Poltekkes CAT Backend — Docker Compose
+# ==============================================================================
+# Environment variables are read automatically from .env in the same directory.
+# DO NOT hardcode credentials here — manage them in .env on each server.
+# ==============================================================================
+
+services:
+  cat-backend:
+    container_name: poltekkes-cat-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      PORT: ${PORT:-5000}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-5433}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      DB_NAME: ${DB_NAME:-cat}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      DB_SIAKAD_HOST: ${DB_SIAKAD_HOST:-${DB_HOST:-host.docker.internal}}
+      DB_SIAKAD_PORT: ${DB_SIAKAD_PORT:-${DB_PORT:-5433}}
+      DB_SIAKAD_USER: ${DB_SIAKAD_USER:-${DB_USER:-postgres}}
+      DB_SIAKAD_PASS: ${DB_SIAKAD_PASS:-${DB_PASS:-postgres}}
+      DB_SIAKAD_NAME: ${DB_SIAKAD_NAME:-${DB_NAME:-cat}}
+      DB_SIAKAD_SSLMODE: ${DB_SIAKAD_SSLMODE:-${DB_SSLMODE:-disable}}
+      TZ: Asia/Jakarta
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - cat-backend-network
+
+networks:
+  cat-backend-network:
+    name: poltekkes_cat_backend_network
+    driver: bridge

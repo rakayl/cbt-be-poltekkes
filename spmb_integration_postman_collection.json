@@ -1,0 +1,350 @@
+{
+	"info": {
+		"_postman_id": "spmb-cbt-integration-poltekkes",
+		"name": "Integrasi SPMB & CBT - Poltekkes Kemenkes Surabaya",
+		"description": "Koleksi API integrasi Machine-to-Machine (M2M) antara Sistem Penerimaan Mahasiswa Baru (SPMB) dengan Sistem Computer Assisted Test (CBT).\n\n### Metode Otentikasi\nSetiap request dari sistem SPMB wajib menyertakan API Key pada header:\n* Header: `X-API-Key: {{apiKey}}`\n* Atau: `Authorization: Bearer {{apiKey}}`\n\n### Alur Integrasi Pendaftaran:\n1. **GET `/integration/spmb/exams`**: Sistem SPMB mengambil daftar paket ujian CBT yang sedang aktif dan tanggalnya belum terlewat untuk disajikan kepada pendaftar.\n2. **POST `/integration/spmb/register`**: Ketika calon mahasiswa menyelesaikan pendaftaran/pembayaran di SPMB, sistem SPMB memanggil endpoint ini untuk mendaftarkan peserta ke `exam_id`, membuat akun login CBT, serta mengalokasikan jadwal sesi & ruangan secara otomatis.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "apiKey",
+			"value": "cbt_live_b94d27b9934d3e08a52e52d7da7dabfa",
+			"type": "string"
+		},
+		{
+			"key": "examId",
+			"value": "146",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Integrasi SPMB (M2M Service)",
+			"item": [
+				{
+					"name": "1. Daftar Ujian Aktif (Belum Terlewat)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text",
+								"description": "Kunci rahasia API Key integrasi SPMB"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/exams?date=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"exams"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "",
+									"description": "Opsional: Tanggal acuan YYYY-MM-DD. Jika kosong, default menggunakan tanggal server hari ini."
+								}
+							]
+						},
+						"description": "Mengambil seluruh paket ujian CBT yang aktif dan jadwal pelaksanaannya belum terlewat (berdasarkan tanggal akhir jadwal sesi >= hari ini).\n\nOutput mencakup ID Ujian (`exam_id`), nama ujian, periode, tanggal mulai-selesai, kapasitas total, jumlah peserta terdaftar, dan sisa kuota yang masih tersedia."
+					},
+					"response": [
+						{
+							"name": "Contoh Respons Sukses (200 OK)",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-API-Key",
+										"value": "{{apiKey}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/integration/spmb/exams",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"integration",
+										"spmb",
+										"exams"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Daftar ujian aktif berhasil dimuat\",\n  \"result\": {\n    \"data\": [\n      {\n        \"exam_id\": 146,\n        \"exam_name\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n        \"period_id\": 66,\n        \"period_name\": \"SPMB 2026/2027 GEL 4\",\n        \"start_date\": \"2026-07-09\",\n        \"end_date\": \"2026-07-09\",\n        \"passing_grade\": 60.0,\n        \"description\": \"Ujian seleksi penerimaan mahasiswa baru\",\n        \"total_sessions\": 3,\n        \"total_capacity\": 120,\n        \"registered_count\": 45,\n        \"remaining_quota\": 75,\n        \"is_open\": true\n      }\n    ]\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "2. Pendaftaran Peserta dari SPMB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text",
+								"description": "Kunci rahasia API Key integrasi SPMB"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"exam_id\": {{examId}},\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"nik\": \"3578012345670001\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"alamat\": \"Jl. Pucang Jajar No. 12, Surabaya\",\n  \"password\": \"\",\n  \"auto_plot_session\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"register"
+							]
+						},
+						"description": "Mendaftarkan peserta dari sistem SPMB langsung ke paket ujian CBT.\n\n### Penjelasan Payload:\n* `exam_id` (wajib): ID ujian tujuan yang didapat dari API 1.\n* `idpendaftar` (wajib): Nomor pendaftaran unik dari sistem SPMB.\n* `nomor_ujian` (opsional): Nomor peserta ujian jika sudah digenerate SPMB. Jika kosong, sistem CBT menggunakan `idpendaftar`.\n* `nama` (wajib): Nama lengkap peserta.\n* `jk` (opsional): Jenis kelamin ('L' / 'P', default: 'L').\n* `email`, `hp`, `alamat`, `nik` (opsional): Biodata kontak peserta.\n* `password` (opsional): Password login CBT peserta. Jika kosong, default password menggunakan nomor ujian/kode peserta.\n* `auto_plot_session` (opsional, default: true): Jika true, sistem CBT otomatis menempatkan peserta ke jadwal sesi dan ruangan yang masih memiliki sisa kuota.\n\n### Keamanan & Idempotensi:\nJika request dikirim ulang dengan data peserta yang sama (misal karena network timeout), sistem tidak akan error duplicate, melainkan mengembalikan kredensial dan jadwal yang sama (UPSERT)."
+					},
+					"response": [
+						{
+							"name": "Contoh Respons Sukses (201 Created)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-API-Key",
+										"value": "{{apiKey}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"exam_id\": 146,\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"auto_plot_session\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/integration/spmb/register",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"integration",
+										"spmb",
+										"register"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Peserta SPMB berhasil didaftarkan ke ujian CBT\",\n  \"result\": {\n    \"data\": {\n      \"participant_code\": \"260010045\",\n      \"idpendaftar\": \"260010045\",\n      \"exam_id\": 146,\n      \"exam_name\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n      \"period_id\": 66,\n      \"period_name\": \"SPMB 2026/2027 GEL 4\",\n      \"cbt_credentials\": {\n        \"username\": \"260010045\",\n        \"password\": \"260010045\"\n      },\n      \"schedule\": {\n        \"is_plotted\": true,\n        \"session_id\": 139,\n        \"room_name\": \"Lab Komputer 1\",\n        \"exam_date\": \"2026-07-09\",\n        \"start_time\": \"08:00\",\n        \"end_time\": \"09:30\",\n        \"duration_minutes\": 90\n      }\n    }\n  }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "2. Manajemen API Key (Admin CAT)",
+			"item": [
+				{
+					"name": "List All API Keys",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys"
+							]
+						},
+						"description": "Memuat seluruh daftar API Key yang telah dibuat oleh Administrator."
+					}
+				},
+				{
+					"name": "Create API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Sistem Pendaftaran SPMB Online 2026\",\n  \"api_key\": \"\",\n  \"ip_whitelist\": \"192.168.1.50, 103.10.20.0/24\",\n  \"description\": \"Kredensial M2M integrasi pendaftaran calon mahasiswa\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys"
+							]
+						},
+						"description": "Membuat API Key baru. Jika `api_key` dikosongkan, sistem akan mengenerate kunci otomatis format `cbt_live_...`."
+					}
+				},
+				{
+					"name": "Update API Key",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Sistem Pendaftaran SPMB Online 2026 (Updated)\",\n  \"ip_whitelist\": \"\",\n  \"is_active\": true,\n  \"description\": \"Semua IP diizinkan\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								"1"
+							]
+						},
+						"description": "Memperbarui nama, IP whitelist, atau status aktif/nonaktif API Key."
+					}
+				},
+				{
+					"name": "Regenerate API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/1/regenerate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								"1",
+								"regenerate"
+							]
+						},
+						"description": "Men-generate ulang token API Key baru untuk ID tertentu."
+					}
+				},
+				{
+					"name": "Delete API Key",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								"1"
+							]
+						},
+						"description": "Menghapus (soft-delete) API Key."
+					}
+				}
+			]
+		}
+	]
+}

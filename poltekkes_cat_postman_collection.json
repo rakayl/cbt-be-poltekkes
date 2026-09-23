@@ -1,0 +1,871 @@
+{
+	"info": {
+		"_postman_id": "poltekkes-cat-enterprise-api-v2",
+		"name": "SIM CAT Enterprise API - Poltekkes Kemenkes Surabaya",
+		"description": "Koleksi lengkap RESTful API untuk Sistem Computer Assisted Test (SIM CAT) Enterprise Poltekkes Kemenkes Surabaya. Mencakup modul Gate SSO, Master Data, Bank Soal, Pelaksanaan Ujian, CBT Flow, Live Monitoring, dan Rekapitulasi Nilai.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "participantToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "scheduleId",
+			"value": "26",
+			"type": "string"
+		},
+		{
+			"key": "participantCode",
+			"value": "2830001120007",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Healthcheck",
+			"item": [
+				{
+					"name": "Healthcheck Engine",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Memeriksa status kesehatan server dan arsitektur database backend."
+					}
+				}
+			]
+		},
+		{
+			"name": "1. SSO & Autentikasi",
+			"item": [
+				{
+					"name": "Login Administrator (Gate SSO)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.result && jsonData.result.data && jsonData.result.data.access_token) {",
+									"    pm.collectionVariables.set('adminToken', jsonData.result.data.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password\",\n  \"remember_me\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Autentikasi admin SIM / pengawas ujian untuk mendapatkan Bearer JWT token."
+					}
+				},
+				{
+					"name": "Login Peserta CBT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.result && jsonData.result.data && jsonData.result.data.participant_token) {",
+									"    pm.collectionVariables.set('participantToken', jsonData.result.data.participant_token);",
+									"    if (jsonData.result.data.active_schedules && jsonData.result.data.active_schedules.length > 0) {",
+									"        pm.collectionVariables.set('scheduleId', jsonData.result.data.active_schedules[0].schedule_id.toString());",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"participant_code\": \"2830001120007\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/participant/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "participant", "login"]
+						},
+						"description": "Autentikasi peserta ujian CBT menggunakan nomor peserta dan kata sandi/PIN."
+					}
+				},
+				{
+					"name": "Get Daftar Modul & Menu Gate",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/menus?module=cat&role=admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "menus"],
+							"query": [
+								{
+									"key": "module",
+									"value": "cat"
+								},
+								{
+									"key": "role",
+									"value": "admin"
+								}
+							]
+						},
+						"description": "Memuat daftar hierarki menu modul sesuai role akses pengguna di Gate SIM."
+					}
+				},
+				{
+					"name": "Switch Modul SIM",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"target_module\": \"cat\",\n  \"role_id\": \"admin\",\n  \"unit_id\": \"00000000000000000000000000000000\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/switch-module",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "switch-module"]
+						},
+						"description": "Generate handshake token untuk perpindahan antar modul SIM terpadu."
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Master Data - Periode Ujian",
+			"item": [
+				{
+					"name": "Get Periode Ujian (Pagination & Search)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/periods?page=1&per_page=10&search=",
+							"host": ["{{baseUrl}}"],
+							"path": ["periods"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": ""
+								}
+							]
+						},
+						"description": "Memuat daftar periode pendaftaran ujian CBT dengan filter pencarian dan paginasi."
+					}
+				},
+				{
+					"name": "Tambah Periode Ujian Baru",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"period_name\": \"CBT SPMB MANDIRI JALUR PRESTASI 2026/2027\",\n  \"period_type\": \"S\",\n  \"is_online\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/periods",
+							"host": ["{{baseUrl}}"],
+							"path": ["periods"]
+						},
+						"description": "Membuat periode penerimaan / seleksi ujian CBT baru."
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Master Data - Bank Soal & Butir Soal",
+			"item": [
+				{
+					"name": "Get Daftar Bank Soal",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bank-soal?page=1&per_page=10&search=",
+							"host": ["{{baseUrl}}"],
+							"path": ["bank-soal"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": ""
+								}
+							]
+						},
+						"description": "Memuat seluruh paket bank soal yang tersedia di pangkalan data CBT."
+					}
+				},
+				{
+					"name": "Get Butir Pertanyaan Bank Soal (Multimedia A-E)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bank-soal/soal_skb_pemrograman/questions",
+							"host": ["{{baseUrl}}"],
+							"path": ["bank-soal", "soal_skb_pemrograman", "questions"]
+						},
+						"description": "Memuat butir pertanyaan, opsi A-E, kunci jawaban, dan asset media (gambar/audio/video)."
+					}
+				},
+				{
+					"name": "Tambah Paket Bank Soal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question_bank_code\": \"skb_keperawatan_2026\",\n  \"question_bank_name\": \"SKB Keperawatan Gawat Darurat\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bank-soal",
+							"host": ["{{baseUrl}}"],
+							"path": ["bank-soal"]
+						},
+						"description": "Mendaftarkan header paket bank soal baru."
+					}
+				},
+				{
+					"name": "Duplikasi / Salin Bank Soal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"new_bank_code\": \"soal_skb_pemrograman_copy\",\n  \"new_bank_name\": \"Soal SKB Pemrograman (Salinan Paket B)\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bank-soal/soal_skb_pemrograman/copy",
+							"host": ["{{baseUrl}}"],
+							"path": ["bank-soal", "soal_skb_pemrograman", "copy"]
+						},
+						"description": "Menyalin seluruh butir soal dan opsi dari paket bank soal yang sudah ada."
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Master Data - Referensi Tambahan",
+			"item": [
+				{
+					"name": "Master Ruang Ujian / Lab CBT",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/ruang",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "ruang"]
+						},
+						"description": "Daftar ruang lab komputer dan kapasitas meja ujian."
+					}
+				},
+				{
+					"name": "Master Skor Penilaian (+4 / -1)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/skor",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "skor"]
+						},
+						"description": "Aturan formula penskoran ujian (skor jawaban benar, salah, dan kosong)."
+					}
+				},
+				{
+					"name": "Master Jenis Ujian",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/jenis-ujian",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "jenis-ujian"]
+						},
+						"description": "Kategori jalur ujian (Mandiri, Reguler, Alih Jenjang, Profesi)."
+					}
+				},
+				{
+					"name": "Master Wilayah (Provinsi, Kota, Kecamatan)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/wilayah?parent_id=",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "wilayah"],
+							"query": [
+								{
+									"key": "parent_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Pohon referensi wilayah berjenjang untuk asal domisili peserta."
+					}
+				},
+				{
+					"name": "Master Panitia Pelaksana Ujian",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/panitia",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "panitia"]
+						},
+						"description": "Daftar NIP dan nama panitia pengawas ujian CBT."
+					}
+				},
+				{
+					"name": "Master Jenis Periode",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reference/jenis-periode",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "jenis-periode"]
+						},
+						"description": "Kategori periode pendaftaran (Semester Ganjil/Genap, Sipenmaru)."
+					}
+				},
+				{
+					"name": "Salin Butir Soal Antar Bank",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sumber_kode_soal\": \"soal_skb_pemrograman\",\n  \"target_kode_soal\": \"soal_skb_paket_c\",\n  \"target_nama_soal\": \"Paket Soal Ujian Tambahan\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reference/salin-soal",
+							"host": ["{{baseUrl}}"],
+							"path": ["reference", "salin-soal"]
+						},
+						"description": "Menyalin butir soal dari bank sumber ke bank target secara aman."
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Pelaksanaan Ujian - Data Ujian & Jadwal",
+			"item": [
+				{
+					"name": "Get Daftar Ujian (Exams List)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/exams?page=1&per_page=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Memuat daftar paket agenda seleksi ujian CBT."
+					}
+				},
+				{
+					"name": "Tambah Data Ujian Baru",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"exam_name\": \"CBT SPMB MANDIRI JALUR REGULER 2026\",\n  \"period_id\": 1,\n  \"passing_grade\": 65.0,\n  \"description\": \"Seleksi Masuk Poltekkes Kemenkes Surabaya\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams"]
+						},
+						"description": "Menambahkan paket ujian baru."
+					}
+				},
+				{
+					"name": "Get Seluruh Jadwal Sesi Ujian",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/exams/schedules",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "schedules"]
+						},
+						"description": "Memuat daftar sesi ujian, tanggal pengerjaan, durasi menit, dan token pengawas."
+					}
+				},
+				{
+					"name": "Tambah Jadwal Sesi Ujian Baru",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"exam_id\": 1,\n  \"room_name\": \"Lab Multimedia 1\",\n  \"exam_date\": \"2026-08-30\",\n  \"duration_minutes\": 90\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams/schedules",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "schedules"]
+						},
+						"description": "Menjadwalkan sesi ujian di ruangan tertentu."
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Pelaksanaan Ujian - Peserta CBT",
+			"item": [
+				{
+					"name": "Get Pangkalan Data Peserta (11K Data)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/participants?page=1&per_page=15&search=",
+							"host": ["{{baseUrl}}"],
+							"path": ["participants"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "15"
+								},
+								{
+									"key": "search",
+									"value": ""
+								}
+							]
+						},
+						"description": "Memuat basis data peserta CBT dengan pencarian instan nomor peserta / nama."
+					}
+				},
+				{
+					"name": "Reset Sesi Login Peserta Terkunci",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"participant_code\": \"2830001120007\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/peserta/reset-login",
+							"host": ["{{baseUrl}}"],
+							"path": ["peserta", "reset-login"]
+						},
+						"description": "Mereset status login peserta yang terkunci karena browser crash atau logout tidak wajar."
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Pengerjaan Ujian Peserta (CBT Exam Flow)",
+			"item": [
+				{
+					"name": "Start Exam (Mulai Pengerjaan)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Participant-Token",
+								"value": "{{participantToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"schedule_id\": {{scheduleId}},\n  \"session_token\": \"TOKEN123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams/participant/start",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "participant", "start"]
+						},
+						"description": "Memulai sesi pengerjaan ujian dan menginisialisasi timer hitung mundur."
+					}
+				},
+				{
+					"name": "Autosave Jawaban Peserta Real-Time",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Participant-Token",
+								"value": "{{participantToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"schedule_id\": {{scheduleId}},\n  \"question_code\": \"soal_skb_pemrograman\",\n  \"question_number\": 1,\n  \"selected_option_key\": 2,\n  \"is_doubtful\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams/participant/answers/save",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "participant", "answers", "save"]
+						},
+						"description": "Menyimpan pilihan jawaban peserta (A-E) dan status ragu-ragu secara instan."
+					}
+				},
+				{
+					"name": "Heartbeat Server Time & Anti-Cheat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Participant-Token",
+								"value": "{{participantToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams/participant/heartbeat",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "participant", "heartbeat"]
+						},
+						"description": "Ping periodik setiap 15 detik untuk sinkronisasi waktu sisa dan deteksi status koneksi."
+					}
+				},
+				{
+					"name": "Finish & Submit Exam",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Participant-Token",
+								"value": "{{participantToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/exams/participant/{{scheduleId}}/finish",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "participant", "{{scheduleId}}", "finish"]
+						},
+						"description": "Mengunci lembar jawaban, menghitung skor otomatis, dan menentukan status kelulusan."
+					}
+				}
+			]
+		},
+		{
+			"name": "8. Penilaian, Monitoring & Laporan",
+			"item": [
+				{
+					"name": "Live Telemetri Monitoring Lab CBT (Pengawas)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/exams/monitoring/{{scheduleId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["exams", "monitoring", "{{scheduleId}}"]
+						},
+						"description": "Live status seluruh peserta di ruangan (sedang ujian, jumlah terjawab, sisa waktu, koneksi)."
+					}
+				},
+				{
+					"name": "Dashboard Operational Stats (4 Kartu & Grafik)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/scoring/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["scoring", "dashboard"]
+						},
+						"description": "Statistik global: total ujian dilaksanakan, % kelulusan, skor rata-rata, dan % skor 0."
+					}
+				},
+				{
+					"name": "Rekapitulasi Hasil Ujian Peserta",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/scoring/recap/{{scheduleId}}?page=1&per_page=15",
+							"host": ["{{baseUrl}}"],
+							"path": ["scoring", "recap", "{{scheduleId}}"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						},
+						"description": "Rekapitulasi nilai akhir, jumlah benar/salah/kosong, status kelulusan, dan ranking peserta."
+					}
+				}
+			]
+		},
+		{
+			"name": "9. Berita & Pengumuman",
+			"item": [
+				{
+					"name": "Get Daftar Pengumuman CBT",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["announcements"]
+						},
+						"description": "Daftar pengumuman tata tertib dan jadwal penting untuk peserta ujian."
+					}
+				}
+			]
+		},
+		{
+			"name": "10. Integrasi SPMB (M2M API Key)",
+			"item": [
+				{
+					"name": "1. Daftar Ujian Aktif (Belum Terlewat)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "cbt_live_b94d27b9934d3e08a52e52d7da7dabfa",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/exams?date=",
+							"host": ["{{baseUrl}}"],
+							"path": ["integration", "spmb", "exams"],
+							"query": [
+								{
+									"key": "date",
+									"value": "",
+									"description": "Opsional: YYYY-MM-DD"
+								}
+							]
+						},
+						"description": "Mengambil paket ujian aktif yang tanggal pelaksanaannya belum terlewat beserta sisa kuota."
+					}
+				},
+				{
+					"name": "2. Pendaftaran Peserta dari SPMB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "cbt_live_b94d27b9934d3e08a52e52d7da7dabfa",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"exam_id\": 146,\n  \"idpendaftar\": \"260010045\",\n  \"nomor_ujian\": \"260010045\",\n  \"nama\": \"Budi Santoso\",\n  \"nik\": \"3578012345670001\",\n  \"jk\": \"L\",\n  \"email\": \"budi.santoso@example.com\",\n  \"hp\": \"081234567890\",\n  \"alamat\": \"Jl. Pucang Jajar No. 12, Surabaya\",\n  \"password\": \"\",\n  \"auto_plot_session\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["integration", "spmb", "register"]
+						},
+						"description": "Mendaftarkan peserta ke ujian CBT dan mengalokasikan jadwal sesi & ruangan secara otomatis."
+					}
+				}
+			]
+		}
+	]
+}
