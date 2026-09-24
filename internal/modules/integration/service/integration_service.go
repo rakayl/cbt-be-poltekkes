@@ -214,6 +214,12 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 		}
 	}
 
+	// Default AutoPlotSession to true if not specified
+	if req.AutoPlotSession == nil {
+		defaultTrue := true
+		req.AutoPlotSession = &defaultTrue
+	}
+
 	return s.repo.RegisterSPMBParticipant(ctx, req, plainPassword)
 }
 
