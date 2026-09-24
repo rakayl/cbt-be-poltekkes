@@ -26,5 +26,7 @@ type APIAccessLog struct {
 	ResponseTimeMS int       `db:"response_time_ms" json:"response_time_ms"`
 	UserAgent      *string   `db:"user_agent" json:"user_agent"`
 	ErrorMessage   *string   `db:"error_message" json:"error_message"`
+	RequestBody    *string   `db:"request_body" json:"request_body"`
+	ResponseBody   *string   `db:"response_body" json:"response_body"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }

@@ -20,6 +20,8 @@ func NewPeriodeHandler(service service.PeriodeService) *PeriodeHandler {
 func (h *PeriodeHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("", h.GetPeriods)
 	rg.POST("", h.CreatePeriod)
+	rg.PUT("/:id", h.UpdatePeriod)
+	rg.DELETE("/:id", h.DeletePeriod)
 }
 
 func (h *PeriodeHandler) GetPeriods(c *gin.Context) {
@@ -50,4 +52,40 @@ func (h *PeriodeHandler) CreatePeriod(c *gin.Context) {
 	}
 
 	response.Created(c, "Periode ujian berhasil dibuat", map[string]int{"period_id": id})
+}
+
+func (h *PeriodeHandler) UpdatePeriod(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "ID periode tidak valid", nil)
+		return
+	}
+
+	var req dto.UpdatePeriodRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Format data periode tidak valid", nil)
+		return
+	}
+
+	if err := h.service.UpdatePeriod(c.Request.Context(), id, &req); err != nil {
+		response.InternalServerError(c, "Gagal memperbarui periode: "+err.Error())
+		return
+	}
+
+	response.Success(c, "Periode ujian berhasil diperbarui", map[string]int{"period_id": id})
+}
+
+func (h *PeriodeHandler) DeletePeriod(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "ID periode tidak valid", nil)
+		return
+	}
+
+	if err := h.service.DeletePeriod(c.Request.Context(), id); err != nil {
+		response.InternalServerError(c, "Gagal menghapus periode: "+err.Error())
+		return
+	}
+
+	response.Success(c, "Periode ujian berhasil dihapus", map[string]int{"period_id": id})
 }
