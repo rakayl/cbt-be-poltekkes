@@ -149,6 +149,7 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 			u.namaujian,
 			u.idperiode,
 			COALESCE(p.namaperiode, '') as namaperiode,
+			COALESCE(p.isonline, 0) as isonline,
 			COALESCE(u.nilaiminimal, 0) as nilaiminimal,
 			COALESCE(u.keterangan, '') as keterangan,
 			COALESCE(MIN(COALESCE(j.tglmulai, r.tglmulai))::text, '') as start_date,
@@ -165,7 +166,7 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 		LEFT JOIN cat.at_jadwalujian j ON j.idujian = u.idujian AND (j.softdelete = '0' OR j.softdelete IS NULL)
 		LEFT JOIN cat.at_ruangujian r ON r.idjadwalujian = j.idjadwalujian AND (r.softdelete = '0' OR r.softdelete IS NULL)
 		WHERE (u.softdelete = '0' OR u.softdelete IS NULL)
-		GROUP BY u.idujian, u.namaujian, u.idperiode, p.namaperiode, u.nilaiminimal, u.keterangan
+		GROUP BY u.idujian, u.namaujian, u.idperiode, p.namaperiode, p.isonline, u.nilaiminimal, u.keterangan
 		HAVING MAX(COALESCE(j.tglselesai, r.tglselesai, j.tglmulai, r.tglmulai)) >= $1::date
 		ORDER BY start_date ASC, u.idujian DESC
 	`
@@ -179,12 +180,13 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 	results := make([]*dto.SPMBActiveExamDTO, 0)
 	for rows.Next() {
 		var item dto.SPMBActiveExamDTO
-		var rawCapacity, regCount int
+		var rawCapacity, regCount, isOnline int
 		if scanErr := rows.Scan(
 			&item.IDUjian,
 			&item.NamaUjian,
 			&item.IDPeriode,
 			&item.NamaPeriode,
+			&isOnline,
 			&item.NilaiMinimal,
 			&item.Keterangan,
 			&item.TglMulai,
@@ -196,14 +198,25 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 			return nil, scanErr
 		}
 
-		item.TotalKapasitas = rawCapacity
+		item.IsOnline = (isOnline == 1)
 		item.JumlahPeserta = regCount
-		rem := rawCapacity - regCount
-		if rem < 0 {
-			rem = 0
+
+		if item.IsOnline {
+			item.Metode = "Online / Daring"
+			item.TotalKapasitas = 0 // Bebas / tidak dibatasi PC
+			item.SisaKuota = 999999
+			item.IsOpen = true
+		} else {
+			item.Metode = "Offline / Di Kampus"
+			item.TotalKapasitas = rawCapacity
+			rem := rawCapacity - regCount
+			if rem < 0 {
+				rem = 0
+			}
+			item.SisaKuota = rem
+			// Pendaftaran SPMB tetap buka agar pendaftar tidak terblokir
+			item.IsOpen = true
 		}
-		item.SisaKuota = rem
-		item.IsOpen = (rawCapacity == 0 || rem > 0)
 
 		results = append(results, &item)
 	}
@@ -212,12 +225,13 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 }
 
 func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req *dto.SPMBRegisterRequestDTO, plainPassword string) (*dto.SPMBRegisterResponseDTO, error) {
-	// 1. Validate exam exists and get period
+	// 1. Validate exam exists and get period & isonline
 	var exam struct {
 		IDUjian     int    `db:"idujian"`
 		NamaUjian   string `db:"namaujian"`
 		IDPeriode   int    `db:"idperiode"`
 		NamaPeriode string `db:"namaperiode"`
+		IsOnline    int    `db:"isonline"`
 	}
 
 	examID := req.IDUjian
@@ -226,7 +240,8 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 	}
 
 	err := r.db.GetContext(ctx, &exam, `
-		SELECT u.idujian, u.namaujian, u.idperiode, COALESCE(p.namaperiode, '') as namaperiode
+		SELECT u.idujian, u.namaujian, u.idperiode, COALESCE(p.namaperiode, '') as namaperiode,
+		       COALESCE(p.isonline, 0) as isonline
 		FROM cat.at_ujian u
 		LEFT JOIN cat.at_periode p ON p.idperiode = u.idperiode
 		WHERE u.idujian = $1 AND (u.softdelete = '0' OR u.softdelete IS NULL)
@@ -312,7 +327,12 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 	}
 
 	// 6. Auto-plotting into available session & room if requested
-	if req.AutoPlotSession {
+	shouldPlot := true
+	if req.AutoPlotSession != nil {
+		shouldPlot = *req.AutoPlotSession
+	}
+
+	if shouldPlot {
 		var availableSession struct {
 			IDJadwalUjian int            `db:"idjadwalujian"`
 			IDRuangUjian  int            `db:"idruangujian"`
@@ -323,34 +343,65 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 			Durasi        int            `db:"durasi"`
 		}
 
-		// Find first session & room with remaining capacity
-		findQuery := `
-			SELECT 
-				j.idjadwalujian,
-				COALESCE(r.idruangujian, 0) as idruangujian,
-				COALESCE(rm.namaruang, r.koderuang, 'Lab Utama') as namaruang,
-				COALESCE(r.tglmulai, j.tglmulai) as tglujian,
-				COALESCE(r.waktumulai, j.waktumulai, '08:00') as jammulai,
-				COALESCE(r.waktuselesai, j.waktuselesai, '09:30') as jamselesai,
-				COALESCE(j.waktupengerjaan::integer, 90) as durasi
-			FROM cat.at_jadwalujian j
-			LEFT JOIN cat.at_ruangujian r ON r.idjadwalujian = j.idjadwalujian AND (r.softdelete = '0' OR r.softdelete IS NULL)
-			LEFT JOIN cat.at_ruang rm ON rm.koderuang = r.koderuang
-			WHERE j.idujian = $1 AND (j.softdelete = '0' OR j.softdelete IS NULL)
-			  AND COALESCE(r.tglselesai, r.tglmulai, j.tglselesai, j.tglmulai, NOW())::date >= CURRENT_DATE
-			  AND (
-			      r.jumlahpeserta IS NULL 
-			      OR r.jumlahpeserta = 0 
-			      OR (
-			          SELECT COUNT(*) FROM cat.at_jadwalpeserta jp 
-			          WHERE jp.idruangujian = r.idruangujian 
-			            AND jp.idjadwalujian = j.idjadwalujian 
-			            AND (jp.softdelete = '0' OR jp.softdelete IS NULL)
-			      ) < r.jumlahpeserta
-			  )
-			ORDER BY COALESCE(r.tglmulai, j.tglmulai) ASC, j.idjadwalujian ASC
-			LIMIT 1
-		`
+		var findQuery string
+		if exam.IsOnline == 1 {
+			// =========================================================================
+			// MODE UJIAN ONLINE / DARING: Kapasitas Bebas (Unlimited)
+			// Selalu plot peserta ke sesi ujian daring aktif tanpa membatasi kuota PC
+			// =========================================================================
+			findQuery = `
+				SELECT 
+					j.idjadwalujian,
+					COALESCE(r.idruangujian, 0) as idruangujian,
+					COALESCE(rm.namaruang, r.koderuang, 'Daring / Online') as namaruang,
+					COALESCE(r.tglmulai, j.tglmulai) as tglujian,
+					COALESCE(r.waktumulai, j.waktumulai, '08:00') as jammulai,
+					COALESCE(r.waktuselesai, j.waktuselesai, '09:30') as jamselesai,
+					COALESCE(j.waktupengerjaan::integer, 90) as durasi
+				FROM cat.at_jadwalujian j
+				LEFT JOIN cat.at_ruangujian r ON r.idjadwalujian = j.idjadwalujian AND (r.softdelete = '0' OR r.softdelete IS NULL)
+				LEFT JOIN cat.at_ruang rm ON rm.koderuang = r.koderuang
+				WHERE j.idujian = $1 AND (j.softdelete = '0' OR j.softdelete IS NULL)
+				ORDER BY 
+					CASE WHEN COALESCE(r.tglselesai, r.tglmulai, j.tglselesai, j.tglmulai, NOW())::date >= CURRENT_DATE THEN 0 ELSE 1 END ASC,
+					COALESCE(r.tglmulai, j.tglmulai) ASC, 
+					j.idjadwalujian ASC
+				LIMIT 1
+			`
+		} else {
+			// =========================================================================
+			// MODE UJIAN OFFLINE / LAB FISIK: Waterfall Plotting Berdasarkan Kapasitas PC
+			// Mengisi ruangan berurutan (Sesi 1 -> Sesi 2 -> dst.) yang masih ada kursi kosong
+			// =========================================================================
+			findQuery = `
+				SELECT 
+					j.idjadwalujian,
+					COALESCE(r.idruangujian, 0) as idruangujian,
+					COALESCE(rm.namaruang, r.koderuang, 'Lab Utama') as namaruang,
+					COALESCE(r.tglmulai, j.tglmulai) as tglujian,
+					COALESCE(r.waktumulai, j.waktumulai, '08:00') as jammulai,
+					COALESCE(r.waktuselesai, j.waktuselesai, '09:30') as jamselesai,
+					COALESCE(j.waktupengerjaan::integer, 90) as durasi
+				FROM cat.at_jadwalujian j
+				LEFT JOIN cat.at_ruangujian r ON r.idjadwalujian = j.idjadwalujian AND (r.softdelete = '0' OR r.softdelete IS NULL)
+				LEFT JOIN cat.at_ruang rm ON rm.koderuang = r.koderuang
+				WHERE j.idujian = $1 AND (j.softdelete = '0' OR j.softdelete IS NULL)
+				  AND COALESCE(r.tglselesai, r.tglmulai, j.tglselesai, j.tglmulai, NOW())::date >= CURRENT_DATE
+				  AND (
+				      r.jumlahpeserta IS NULL 
+				      OR r.jumlahpeserta = 0 
+				      OR (
+				          SELECT COUNT(*) FROM cat.at_jadwalpeserta jp 
+				          WHERE jp.idruangujian = r.idruangujian 
+				            AND jp.idjadwalujian = j.idjadwalujian 
+				            AND (jp.softdelete = '0' OR jp.softdelete IS NULL)
+				      ) < r.jumlahpeserta
+				  )
+				ORDER BY COALESCE(r.tglmulai, j.tglmulai) ASC, j.idjadwalujian ASC, COALESCE(r.prioritas, 1) ASC
+				LIMIT 1
+			`
+		}
+
 		err = r.db.GetContext(ctx, &availableSession, findQuery, exam.IDUjian)
 		if err == nil && availableSession.IDJadwalUjian > 0 {
 			// Plot into cat.at_jadwalpeserta
@@ -367,8 +418,12 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 
 			resp.Schedule.IsPlotted = true
 			resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
-			if availableSession.NamaRuang.Valid {
+			if availableSession.NamaRuang.Valid && availableSession.NamaRuang.String != "" {
 				resp.Schedule.NamaRuang = availableSession.NamaRuang.String
+			} else if exam.IsOnline == 1 {
+				resp.Schedule.NamaRuang = "Daring / Online"
+			} else {
+				resp.Schedule.NamaRuang = "Lab Utama"
 			}
 			if availableSession.TglUjian.Valid {
 				resp.Schedule.TglUjian = availableSession.TglUjian.Time.Format("2006-01-02")
@@ -390,7 +445,22 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 				}
 			}
 			resp.Schedule.WaktuPengerjaan = availableSession.Durasi
+			if exam.IsOnline == 1 {
+				resp.Schedule.Catatan = "Ujian dilaksanakan secara Daring / Online."
+			} else {
+				resp.Schedule.Catatan = "Ujian dilaksanakan secara Luring di Lab Komputer Kampus."
+			}
+		} else {
+			resp.Schedule.IsPlotted = false
+			if exam.IsOnline == 1 {
+				resp.Schedule.Catatan = "Sesi ujian daring belum aktif atau belum dibuat oleh panitia."
+			} else {
+				resp.Schedule.Catatan = "Kapasitas sesi lab saat ini telah penuh. Peserta berhasil terdaftar dan masuk antrean pembagian sesi tambahan oleh panitia CBT."
+			}
 		}
+	} else {
+		resp.Schedule.IsPlotted = false
+		resp.Schedule.Catatan = "Auto-plotting dinonaktifkan atas permintaan klien."
 	}
 
 	return resp, nil
