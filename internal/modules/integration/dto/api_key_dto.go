@@ -41,6 +41,8 @@ type SPMBActiveExamDTO struct {
 	NamaUjian      string  `json:"namaujian"`
 	IDPeriode      int     `json:"idperiode"`
 	NamaPeriode    string  `json:"namaperiode"`
+	IsOnline       bool    `json:"is_online"`
+	Metode         string  `json:"metode"` // "Online / Daring" atau "Offline / Di Kampus"
 	TglMulai       string  `json:"tglmulai"`
 	TglSelesai     string  `json:"tglselesai"`
 	NilaiMinimal   float64 `json:"nilaiminimal"`
@@ -66,7 +68,7 @@ type SPMBRegisterRequestDTO struct {
 	Alamat          string `json:"alamat"`
 	IDKota          *int   `json:"idkota"`
 	Password        string `json:"password"`          // Optional, if empty defaults to participant code
-	AutoPlotSession bool   `json:"auto_plot_session"` // Default true
+	AutoPlotSession *bool  `json:"auto_plot_session"` // Default true
 }
 
 type SPMBCredentialsDTO struct {
@@ -82,6 +84,7 @@ type SPMBScheduleInfoDTO struct {
 	JamMulai        string `json:"jammulai,omitempty"`
 	JamSelesai      string `json:"jamselesai,omitempty"`
 	WaktuPengerjaan int    `json:"waktupengerjaan,omitempty"`
+	Catatan         string `json:"catatan,omitempty"`
 }
 
 type SPMBRegisterResponseDTO struct {
