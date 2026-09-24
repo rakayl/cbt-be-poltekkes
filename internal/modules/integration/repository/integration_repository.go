@@ -432,12 +432,14 @@ func (r *integrationRepository) CreateAccessLog(ctx context.Context, log *entity
 	query := `
 		INSERT INTO cat.at_api_access_logs (
 			api_key_id, client_name, ip_address, method, endpoint,
-			status_code, response_time_ms, user_agent, error_message, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+			status_code, response_time_ms, user_agent, error_message,
+			request_body, response_body, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		log.APIKeyID, log.ClientName, log.IPAddress, log.Method, log.Endpoint,
 		log.StatusCode, log.ResponseTimeMS, log.UserAgent, log.ErrorMessage,
+		log.RequestBody, log.ResponseBody,
 	)
 	return err
 }
@@ -474,7 +476,7 @@ func (r *integrationRepository) GetAccessLogs(ctx context.Context, apiKeyID int,
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, api_key_id, client_name, ip_address, method, endpoint, status_code, response_time_ms, user_agent, error_message, created_at
+		SELECT id, api_key_id, client_name, ip_address, method, endpoint, status_code, response_time_ms, user_agent, error_message, request_body, response_body, created_at
 		FROM cat.at_api_access_logs
 		WHERE %s
 		ORDER BY id DESC

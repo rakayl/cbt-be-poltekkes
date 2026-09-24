@@ -11,6 +11,8 @@ import (
 type PeriodeService interface {
 	GetPeriods(ctx context.Context, page, perPage int, search string) ([]*dto.PeriodResponseDTO, *response.Pagination, error)
 	CreatePeriod(ctx context.Context, req *dto.CreatePeriodRequestDTO) (int, error)
+	UpdatePeriod(ctx context.Context, id int, req *dto.UpdatePeriodRequestDTO) error
+	DeletePeriod(ctx context.Context, id int) error
 }
 
 type periodeService struct {
@@ -64,4 +66,20 @@ func (s *periodeService) CreatePeriod(ctx context.Context, req *dto.CreatePeriod
 		entityData.JenisPeriode = "S"
 	}
 	return s.repo.CreatePeriod(ctx, entityData)
+}
+
+func (s *periodeService) UpdatePeriod(ctx context.Context, id int, req *dto.UpdatePeriodRequestDTO) error {
+	entityData := &entity.Periode{
+		NamaPeriode:  req.PeriodName,
+		JenisPeriode: req.PeriodType,
+		IsOnline:     req.IsOnline,
+	}
+	if entityData.JenisPeriode == "" {
+		entityData.JenisPeriode = "S"
+	}
+	return s.repo.UpdatePeriod(ctx, id, entityData)
+}
+
+func (s *periodeService) DeletePeriod(ctx context.Context, id int) error {
+	return s.repo.DeletePeriod(ctx, id)
 }

@@ -110,5 +110,7 @@ type APIAccessLogResponseDTO struct {
 	ResponseTimeMS int       `json:"response_time_ms"`
 	UserAgent      string    `json:"user_agent"`
 	ErrorMessage   string    `json:"error_message"`
+	RequestBody    string    `json:"request_body"`
+	ResponseBody   string    `json:"response_body"`
 	CreatedAt      time.Time `json:"created_at"`
 }

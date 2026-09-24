@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +17,45 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var passwordMaskRegex = regexp.MustCompile(`(?i)("password"\s*:\s*)"([^"]+)"`)
+
+type bodyLogWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w bodyLogWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w bodyLogWriter) WriteString(s string) (int, error) {
+	w.body.WriteString(s)
+	return w.ResponseWriter.WriteString(s)
+}
+
+func maskSensitiveData(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	return passwordMaskRegex.ReplaceAllString(raw, `$1"********"`)
+}
+
+func truncateBody(s string, maxLen int) string {
+	if len(s) > maxLen {
+		return s[:maxLen] + "\n... [truncated]"
+	}
+	return s
+}
+
+func strPtrOrNil(s string) *string {
+	trimmed := strings.TrimSpace(s)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
 func APIKeyAuthMiddleware(repo repository.IntegrationRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
@@ -21,6 +63,20 @@ func APIKeyAuthMiddleware(repo repository.IntegrationRepository) gin.HandlerFunc
 		userAgent := c.Request.UserAgent()
 		method := c.Request.Method
 		endpoint := c.Request.URL.Path
+
+		// Wrap ResponseWriter to capture response payload
+		blw := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
+		c.Writer = blw
+
+		// Read and preserve Request Body
+		var rawReqBody string
+		if c.Request.Body != nil {
+			bodyBytes, err := io.ReadAll(c.Request.Body)
+			if err == nil {
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				rawReqBody = truncateBody(maskSensitiveData(string(bodyBytes)), 65536)
+			}
+		}
 
 		apiKey := strings.TrimSpace(c.GetHeader("X-API-Key"))
 		if apiKey == "" {
@@ -35,18 +91,24 @@ func APIKeyAuthMiddleware(repo repository.IntegrationRepository) gin.HandlerFunc
 
 		if apiKey == "" {
 			errMsg := "Header 'X-API-Key' atau 'Authorization: Bearer <token>' wajib disertakan"
-			go logAccess(repo, nil, "Unknown / Unauthenticated", clientIP, method, endpoint, 401, int(time.Since(startTime).Milliseconds()), userAgent, &errMsg)
 			response.Unauthorized(c, "Otentikasi gagal: "+errMsg)
 			c.Abort()
+
+			durationMS := int(time.Since(startTime).Milliseconds())
+			respBody := truncateBody(blw.body.String(), 65536)
+			go logAccess(repo, nil, "Unknown / Unauthenticated", clientIP, method, endpoint, 401, durationMS, userAgent, &errMsg, strPtrOrNil(rawReqBody), strPtrOrNil(respBody))
 			return
 		}
 
 		keyRecord, err := repo.GetAPIKeyBySecret(c.Request.Context(), apiKey)
 		if err != nil || keyRecord == nil {
 			errMsg := "API Key tidak valid atau telah dinonaktifkan"
-			go logAccess(repo, nil, "Invalid API Key", clientIP, method, endpoint, 401, int(time.Since(startTime).Milliseconds()), userAgent, &errMsg)
 			response.Unauthorized(c, "Otentikasi gagal: "+errMsg)
 			c.Abort()
+
+			durationMS := int(time.Since(startTime).Milliseconds())
+			respBody := truncateBody(blw.body.String(), 65536)
+			go logAccess(repo, nil, "Invalid API Key", clientIP, method, endpoint, 401, durationMS, userAgent, &errMsg, strPtrOrNil(rawReqBody), strPtrOrNil(respBody))
 			return
 		}
 
@@ -54,9 +116,12 @@ func APIKeyAuthMiddleware(repo repository.IntegrationRepository) gin.HandlerFunc
 		if keyRecord.IPWhitelist != nil && strings.TrimSpace(*keyRecord.IPWhitelist) != "" {
 			if !isIPAllowed(clientIP, *keyRecord.IPWhitelist) {
 				errMsg := fmt.Sprintf("Akses ditolak: IP Anda (%s) tidak terdaftar dalam whitelist API Key '%s'", clientIP, keyRecord.Name)
-				go logAccess(repo, &keyRecord.ID, keyRecord.Name, clientIP, method, endpoint, 403, int(time.Since(startTime).Milliseconds()), userAgent, &errMsg)
 				response.Forbidden(c, errMsg)
 				c.Abort()
+
+				durationMS := int(time.Since(startTime).Milliseconds())
+				respBody := truncateBody(blw.body.String(), 65536)
+				go logAccess(repo, &keyRecord.ID, keyRecord.Name, clientIP, method, endpoint, 403, durationMS, userAgent, &errMsg, strPtrOrNil(rawReqBody), strPtrOrNil(respBody))
 				return
 			}
 		}
@@ -79,11 +144,12 @@ func APIKeyAuthMiddleware(repo repository.IntegrationRepository) gin.HandlerFunc
 			msg := fmt.Sprintf("HTTP %d returned", statusCode)
 			errMsg = &msg
 		}
-		go logAccess(repo, &keyRecord.ID, keyRecord.Name, clientIP, method, endpoint, statusCode, durationMS, userAgent, errMsg)
+		respBody := truncateBody(blw.body.String(), 65536)
+		go logAccess(repo, &keyRecord.ID, keyRecord.Name, clientIP, method, endpoint, statusCode, durationMS, userAgent, errMsg, strPtrOrNil(rawReqBody), strPtrOrNil(respBody))
 	}
 }
 
-func logAccess(repo repository.IntegrationRepository, apiKeyID *int, clientName, ip, method, endpoint string, statusCode, durationMS int, userAgent string, errMsg *string) {
+func logAccess(repo repository.IntegrationRepository, apiKeyID *int, clientName, ip, method, endpoint string, statusCode, durationMS int, userAgent string, errMsg *string, reqBody, respBody *string) {
 	_ = repo.CreateAccessLog(context.Background(), &entity.APIAccessLog{
 		APIKeyID:       apiKeyID,
 		ClientName:     clientName,
@@ -94,6 +160,8 @@ func logAccess(repo repository.IntegrationRepository, apiKeyID *int, clientName,
 		ResponseTimeMS: durationMS,
 		UserAgent:      &userAgent,
 		ErrorMessage:   errMsg,
+		RequestBody:    reqBody,
+		ResponseBody:   respBody,
 	})
 }
 

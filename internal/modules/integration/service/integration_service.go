@@ -237,8 +237,13 @@ func (s *integrationService) GetAccessLogs(ctx context.Context, apiKeyID int, pa
 			ua = *l.UserAgent
 		}
 		errMsg := ""
-		if l.ErrorMessage != nil {
-			errMsg = *l.ErrorMessage
+		reqBody := ""
+		if l.RequestBody != nil {
+			reqBody = *l.RequestBody
+		}
+		respBody := ""
+		if l.ResponseBody != nil {
+			respBody = *l.ResponseBody
 		}
 
 		res = append(res, &dto.APIAccessLogResponseDTO{
@@ -252,6 +257,8 @@ func (s *integrationService) GetAccessLogs(ctx context.Context, apiKeyID int, pa
 			ResponseTimeMS: l.ResponseTimeMS,
 			UserAgent:      ua,
 			ErrorMessage:   errMsg,
+			RequestBody:    reqBody,
+			ResponseBody:   respBody,
 			CreatedAt:      l.CreatedAt,
 		})
 	}
