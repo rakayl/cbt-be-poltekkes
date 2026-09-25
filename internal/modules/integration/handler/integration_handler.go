@@ -145,3 +145,83 @@ func (h *IntegrationHandler) RegisterSPMBParticipant(c *gin.Context) {
 
 	response.Created(c, "Peserta SPMB berhasil didaftarkan ke ujian CBT", res)
 }
+
+func (h *IntegrationHandler) RegisterSPMBBatchParticipants(c *gin.Context) {
+	var req dto.SPMBBatchRegisterRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Data pendaftaran batch tidak valid: "+err.Error(), nil)
+		return
+	}
+
+	res, err := h.service.RegisterSPMBBatchParticipants(c.Request.Context(), &req)
+	if err != nil {
+		response.BadRequest(c, "Gagal memproses pendaftaran batch: "+err.Error(), nil)
+		return
+	}
+
+	response.Success(c, "Pendaftaran batch peserta SPMB berhasil diproses", res)
+}
+
+func (h *IntegrationHandler) GetSPMBParticipant(c *gin.Context) {
+	idPendaftar := c.Param("idpendaftar")
+	if idPendaftar == "" {
+		response.BadRequest(c, "Parameter idpendaftar / nomor ujian wajib disertakan", nil)
+		return
+	}
+
+	res, err := h.service.GetSPMBParticipant(c.Request.Context(), idPendaftar)
+	if err != nil {
+		response.NotFound(c, err.Error())
+		return
+	}
+
+	response.Success(c, "Data peserta CBT berhasil ditemukan", res)
+}
+
+func (h *IntegrationHandler) UpdateSPMBParticipant(c *gin.Context) {
+	idPendaftar := c.Param("idpendaftar")
+	if idPendaftar == "" {
+		response.BadRequest(c, "Parameter idpendaftar / nomor ujian wajib disertakan", nil)
+		return
+	}
+
+	var req dto.SPMBUpdateParticipantDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Payload pembaharuan tidak valid: "+err.Error(), nil)
+		return
+	}
+
+	res, err := h.service.UpdateSPMBParticipant(c.Request.Context(), idPendaftar, &req)
+	if err != nil {
+		response.InternalServerError(c, "Gagal memperbarui data peserta: "+err.Error())
+		return
+	}
+
+	response.Success(c, "Data peserta CBT berhasil diperbarui", res)
+}
+
+func (h *IntegrationHandler) DeleteSPMBParticipant(c *gin.Context) {
+	idPendaftar := c.Param("idpendaftar")
+	if idPendaftar == "" {
+		response.BadRequest(c, "Parameter idpendaftar / nomor ujian wajib disertakan", nil)
+		return
+	}
+
+	if err := h.service.DeleteSPMBParticipant(c.Request.Context(), idPendaftar); err != nil {
+		response.InternalServerError(c, "Gagal membatalkan pendaftaran peserta: "+err.Error())
+		return
+	}
+
+	response.Success(c, "Pendaftaran peserta berhasil dibatalkan dan alokasi kursi lab telah dilepas", nil)
+}
+
+func (h *IntegrationHandler) GetUnplottedQueueSummary(c *gin.Context) {
+	summary, err := h.service.GetUnplottedQueueSummary(c.Request.Context())
+	if err != nil {
+		response.InternalServerError(c, "Gagal memuat ringkasan antrean peserta belum ter-plot: "+err.Error())
+		return
+	}
+
+	response.Success(c, "Ringkasan antrean peserta berhasil dimuat", summary)
+}
+

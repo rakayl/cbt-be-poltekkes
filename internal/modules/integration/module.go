@@ -26,6 +26,7 @@ func Init(apiV1 *gin.RouterGroup, db *sqlx.DB) {
 		adminKeyGroup.DELETE("/:id", hdl.DeleteAPIKey)
 		adminKeyGroup.POST("/:id/regenerate", hdl.RegenerateAPIKey)
 		adminKeyGroup.GET("/logs", hdl.GetAccessLogs)
+		adminKeyGroup.GET("/queue-summary", hdl.GetUnplottedQueueSummary)
 	}
 
 	// 2. SPMB M2M Integration Routes (Protected by API Key & Optional IP Whitelist)
@@ -34,5 +35,9 @@ func Init(apiV1 *gin.RouterGroup, db *sqlx.DB) {
 	{
 		spmbGroup.GET("/exams", hdl.GetSPMBActiveExams)
 		spmbGroup.POST("/register", hdl.RegisterSPMBParticipant)
+		spmbGroup.POST("/register-batch", hdl.RegisterSPMBBatchParticipants)
+		spmbGroup.GET("/participants/:idpendaftar", hdl.GetSPMBParticipant)
+		spmbGroup.PUT("/participants/:idpendaftar", hdl.UpdateSPMBParticipant)
+		spmbGroup.DELETE("/participants/:idpendaftar", hdl.DeleteSPMBParticipant)
 	}
 }
