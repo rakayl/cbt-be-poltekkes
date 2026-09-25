@@ -191,6 +191,138 @@
 							"body": "{\n  \"trace_id\": \"b5421f3e-998d-491e-a4fb-6db382c0c879\",\n  \"status\": \"success\",\n  \"message\": \"Peserta SPMB berhasil didaftarkan ke ujian CBT\",\n  \"result\": {\n    \"data\": {\n      \"kodepeserta\": \"260010045\",\n      \"idpendaftar\": \"260010045\",\n      \"idujian\": 146,\n      \"namaujian\": \"SPMB MANDIRI STr (DIV) RPL CBT SPMB MANDIRI 2026 Gel 4\",\n      \"idperiode\": 66,\n      \"namaperiode\": \"SPMB 2026/2027 GEL 4\",\n      \"cbt_credentials\": {\n        \"username\": \"260010045\",\n        \"password\": \"260010045\"\n      },\n      \"jadwal\": {\n        \"is_plotted\": true,\n        \"idjadwalujian\": 139,\n        \"namaruang\": \"Lab Komputer 1\",\n        \"tglujian\": \"2026-07-09\",\n        \"jammulai\": \"08:00\",\n        \"jamselesai\": \"09:30\",\n        \"waktupengerjaan\": 90\n      }\n    }\n  }\n}"
 						}
 					]
+				},
+				{
+					"name": "3. Pendaftaran Peserta Massal / Batch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text",
+								"description": "Kunci rahasia API Key integrasi SPMB"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"participants\": [\n    {\n      \"idujian\": 147,\n      \"idpendaftar\": \"260010088\",\n      \"nama\": \"Andi Pratama\",\n      \"jk\": \"L\",\n      \"email\": \"andi.pratama@example.com\",\n      \"hp\": \"081234567801\"\n    },\n    {\n      \"idujian\": 147,\n      \"idpendaftar\": \"260010089\",\n      \"nama\": \"Siti Nurhaliza\",\n      \"jk\": \"P\",\n      \"email\": \"siti.nurhaliza@example.com\",\n      \"hp\": \"081234567802\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/register-batch",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"register-batch"
+							]
+						},
+						"description": "Mendaftarkan peserta secara massal (batch up to 200 peserta) dalam satu request. Menghasilkan laporan sukses dan gagal per item peserta."
+					}
+				},
+				{
+					"name": "4. Cek Detail & Status Peserta",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/participants/260010088",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"participants",
+								"260010088"
+							]
+						},
+						"description": "Mengambil detail akun peserta, kredensial login CBT, serta status jadwal sesi & ruang lab."
+					}
+				},
+				{
+					"name": "5. Perbarui Profil / Password Peserta",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama\": \"Andi Pratama Terupdate\",\n  \"email\": \"andi.new@example.com\",\n  \"hp\": \"081999888777\",\n  \"password\": \"rahasiaBaru123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/participants/260010088",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"participants",
+								"260010088"
+							]
+						},
+						"description": "Memperbarui data kontak atau kata sandi peserta di CBT."
+					}
+				},
+				{
+					"name": "6. Batalkan Pendaftaran & Lepas Kursi Lab",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/integration/spmb/participants/260010088",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"integration",
+								"spmb",
+								"participants",
+								"260010088"
+							]
+						},
+						"description": "Membatalkan pendaftaran peserta (soft-delete) dan langsung melepaskan alokasi kursi lab untuk peserta antrean lainnya."
+					}
 				}
 			]
 		},
@@ -342,6 +474,30 @@
 							]
 						},
 						"description": "Menghapus (soft-delete) API Key."
+					}
+				},
+				{
+					"name": "Ringkasan Antrean Peserta Belum Ter-Plot",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/queue-summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								"queue-summary"
+							]
+						},
+						"description": "Mengambil ringkasan jumlah peserta offline yang belum mendapatkan plotting ruang & sesi karena kapasitas lab fisik penuh."
 					}
 				}
 			]
