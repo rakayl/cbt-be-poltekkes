@@ -224,4 +224,3 @@ func (h *IntegrationHandler) GetUnplottedQueueSummary(c *gin.Context) {
 
 	response.Success(c, "Ringkasan antrean peserta berhasil dimuat", summary)
 }
-
