@@ -614,28 +614,28 @@ func (r *integrationRepository) GetSPMBParticipant(ctx context.Context, idPendaf
 	`
 
 	var row struct {
-		KodePeserta     string         `db:"kodepeserta"`
-		IDPendaftar     string         `db:"idpendaftar"`
-		Nama            string         `db:"nama"`
-		JK              string         `db:"jk"`
-		Email           string         `db:"email"`
-		HP              string         `db:"hp"`
-		Alamat          string         `db:"alamat"`
-		IDKota          *int           `db:"idkota"`
-		IDUjian         int            `db:"idujian"`
-		NamaUjian       string         `db:"namaujian"`
-		IDPeriode       int            `db:"idperiode"`
-		NamaPeriode     string         `db:"namaperiode"`
-		IsOnline        int            `db:"isonline"`
-		PlainPassword   string         `db:"plain_password"`
-		TUpdateTime     time.Time      `db:"t_updatetime"`
-		IDJadwalUjian   int            `db:"idjadwalujian"`
-		NamaRuang       string         `db:"namaruang"`
-		TglUjianRuang   sql.NullTime   `db:"tglujian_ruang"`
-		TglUjianJadwal  sql.NullTime   `db:"tglujian_jadwal"`
-		JamMulai        string         `db:"jammulai"`
-		JamSelesai      string         `db:"jamselesai"`
-		Durasi          int            `db:"durasi"`
+		KodePeserta    string       `db:"kodepeserta"`
+		IDPendaftar    string       `db:"idpendaftar"`
+		Nama           string       `db:"nama"`
+		JK             string       `db:"jk"`
+		Email          string       `db:"email"`
+		HP             string       `db:"hp"`
+		Alamat         string       `db:"alamat"`
+		IDKota         *int         `db:"idkota"`
+		IDUjian        int          `db:"idujian"`
+		NamaUjian      string       `db:"namaujian"`
+		IDPeriode      int          `db:"idperiode"`
+		NamaPeriode    string       `db:"namaperiode"`
+		IsOnline       int          `db:"isonline"`
+		PlainPassword  string       `db:"plain_password"`
+		TUpdateTime    time.Time    `db:"t_updatetime"`
+		IDJadwalUjian  int          `db:"idjadwalujian"`
+		NamaRuang      string       `db:"namaruang"`
+		TglUjianRuang  sql.NullTime `db:"tglujian_ruang"`
+		TglUjianJadwal sql.NullTime `db:"tglujian_jadwal"`
+		JamMulai       string       `db:"jammulai"`
+		JamSelesai     string       `db:"jamselesai"`
+		Durasi         int          `db:"durasi"`
 	}
 
 	err := r.db.GetContext(ctx, &row, query, idPendaftar)
