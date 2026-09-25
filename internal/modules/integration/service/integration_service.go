@@ -23,6 +23,11 @@ type IntegrationService interface {
 
 	GetActiveExams(ctx context.Context, refDate string) ([]*dto.SPMBActiveExamDTO, error)
 	RegisterSPMBParticipant(ctx context.Context, req *dto.SPMBRegisterRequestDTO) (*dto.SPMBRegisterResponseDTO, error)
+	RegisterSPMBBatchParticipants(ctx context.Context, req *dto.SPMBBatchRegisterRequestDTO) (*dto.SPMBBatchRegisterResponseDTO, error)
+	GetSPMBParticipant(ctx context.Context, idPendaftar string) (*dto.SPMBParticipantDetailDTO, error)
+	UpdateSPMBParticipant(ctx context.Context, idPendaftar string, req *dto.SPMBUpdateParticipantDTO) (*dto.SPMBParticipantDetailDTO, error)
+	DeleteSPMBParticipant(ctx context.Context, idPendaftar string) error
+	GetUnplottedQueueSummary(ctx context.Context) (*dto.UnplottedQueueSummaryDTO, error)
 
 	GetAccessLogs(ctx context.Context, apiKeyID int, page, perPage int, search string) ([]*dto.APIAccessLogResponseDTO, *response.Pagination, error)
 }
@@ -221,6 +226,81 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 	}
 
 	return s.repo.RegisterSPMBParticipant(ctx, req, plainPassword)
+}
+
+func (s *integrationService) RegisterSPMBBatchParticipants(ctx context.Context, req *dto.SPMBBatchRegisterRequestDTO) (*dto.SPMBBatchRegisterResponseDTO, error) {
+	if req == nil || len(req.Participants) == 0 {
+		return nil, fmt.Errorf("daftar peserta tidak boleh kosong")
+	}
+
+	const maxBatchSize = 200
+	if len(req.Participants) > maxBatchSize {
+		return nil, fmt.Errorf("maksimal pendaftaran batch adalah %d peserta per permintaan", maxBatchSize)
+	}
+
+	resp := &dto.SPMBBatchRegisterResponseDTO{
+		Total:        len(req.Participants),
+		SuccessCount: 0,
+		FailedCount:  0,
+		Results:      make([]dto.SPMBBatchItemResultDTO, 0, len(req.Participants)),
+	}
+
+	for idx, p := range req.Participants {
+		itemReq := p // copy
+		res, err := s.RegisterSPMBParticipant(ctx, &itemReq)
+		if err != nil {
+			resp.FailedCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: itemReq.IDPendaftar,
+				Success:     false,
+				Error:       err.Error(),
+				Data:        nil,
+			})
+		} else {
+			resp.SuccessCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: res.IDPendaftar,
+				Success:     true,
+				Error:       "",
+				Data:        res,
+			})
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *integrationService) GetSPMBParticipant(ctx context.Context, idPendaftar string) (*dto.SPMBParticipantDetailDTO, error) {
+	cleanID := strings.TrimSpace(idPendaftar)
+	if cleanID == "" {
+		return nil, fmt.Errorf("idpendaftar / nomor ujian tidak boleh kosong")
+	}
+	return s.repo.GetSPMBParticipant(ctx, cleanID)
+}
+
+func (s *integrationService) UpdateSPMBParticipant(ctx context.Context, idPendaftar string, req *dto.SPMBUpdateParticipantDTO) (*dto.SPMBParticipantDetailDTO, error) {
+	cleanID := strings.TrimSpace(idPendaftar)
+	if cleanID == "" {
+		return nil, fmt.Errorf("idpendaftar / nomor ujian tidak boleh kosong")
+	}
+	if req == nil {
+		return nil, fmt.Errorf("payload pembaharuan peserta tidak boleh kosong")
+	}
+	return s.repo.UpdateSPMBParticipant(ctx, cleanID, req)
+}
+
+func (s *integrationService) DeleteSPMBParticipant(ctx context.Context, idPendaftar string) error {
+	cleanID := strings.TrimSpace(idPendaftar)
+	if cleanID == "" {
+		return fmt.Errorf("idpendaftar / nomor ujian tidak boleh kosong")
+	}
+	return s.repo.DeleteSPMBParticipant(ctx, cleanID)
+}
+
+func (s *integrationService) GetUnplottedQueueSummary(ctx context.Context) (*dto.UnplottedQueueSummaryDTO, error) {
+	return s.repo.GetUnplottedQueueSummary(ctx)
 }
 
 func (s *integrationService) GetAccessLogs(ctx context.Context, apiKeyID int, page, perPage int, search string) ([]*dto.APIAccessLogResponseDTO, *response.Pagination, error) {

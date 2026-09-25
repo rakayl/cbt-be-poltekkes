@@ -30,6 +30,10 @@ type IntegrationRepository interface {
 	// SPMB Integration
 	GetSPMBActiveExams(ctx context.Context, refDate string) ([]*dto.SPMBActiveExamDTO, error)
 	RegisterSPMBParticipant(ctx context.Context, req *dto.SPMBRegisterRequestDTO, plainPassword string) (*dto.SPMBRegisterResponseDTO, error)
+	GetSPMBParticipant(ctx context.Context, idPendaftar string) (*dto.SPMBParticipantDetailDTO, error)
+	UpdateSPMBParticipant(ctx context.Context, idPendaftar string, req *dto.SPMBUpdateParticipantDTO) (*dto.SPMBParticipantDetailDTO, error)
+	DeleteSPMBParticipant(ctx context.Context, idPendaftar string) error
+	GetUnplottedQueueSummary(ctx context.Context) (*dto.UnplottedQueueSummaryDTO, error)
 
 	// API Access Logs
 	CreateAccessLog(ctx context.Context, log *entity.APIAccessLog) error
@@ -404,8 +408,13 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 
 		err = r.db.GetContext(ctx, &availableSession, findQuery, exam.IDUjian)
 		if err == nil && availableSession.IDJadwalUjian > 0 {
+			var ruangArg interface{} = nil
+			if availableSession.IDRuangUjian > 0 {
+				ruangArg = availableSession.IDRuangUjian
+			}
+
 			// Plot into cat.at_jadwalpeserta
-			_, _ = r.db.ExecContext(ctx, `
+			_, plotErr := r.db.ExecContext(ctx, `
 				INSERT INTO cat.at_jadwalpeserta (
 					kodepeserta, idjadwalujian, idruangujian, is_locked, risk_level,
 					softdelete, t_updatetime, t_updateact
@@ -414,10 +423,14 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 				)
 				ON CONFLICT (kodepeserta, idjadwalujian) DO UPDATE
 				SET idruangujian = $3, softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-plot'
-			`, kodepeserta, availableSession.IDJadwalUjian, availableSession.IDRuangUjian)
+			`, kodepeserta, availableSession.IDJadwalUjian, ruangArg)
 
-			resp.Schedule.IsPlotted = true
-			resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+			if plotErr == nil {
+				resp.Schedule.IsPlotted = true
+				resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+			} else {
+				resp.Schedule.IsPlotted = false
+			}
 			if availableSession.NamaRuang.Valid && availableSession.NamaRuang.String != "" {
 				resp.Schedule.NamaRuang = availableSession.NamaRuang.String
 			} else if exam.IsOnline == 1 {
@@ -560,4 +573,351 @@ func (r *integrationRepository) GetAccessLogs(ctx context.Context, apiKeyID int,
 		logs = []*entity.APIAccessLog{}
 	}
 	return logs, total, err
+}
+
+func (r *integrationRepository) GetSPMBParticipant(ctx context.Context, idPendaftar string) (*dto.SPMBParticipantDetailDTO, error) {
+	query := `
+		SELECT 
+			p.kodepeserta,
+			COALESCE(p.idpendaftar, p.kodepeserta) as idpendaftar,
+			COALESCE(p.nama, '') as nama,
+			COALESCE(p.jk, 'L') as jk,
+			COALESCE(p.email, '') as email,
+			COALESCE(p.hp, '') as hp,
+			COALESCE(p.alamat, '') as alamat,
+			p.idkota,
+			COALESCE(u.idujian, 0) as idujian,
+			COALESCE(u.namaujian, '') as namaujian,
+			COALESCE(per.idperiode, 0) as idperiode,
+			COALESCE(per.namaperiode, '') as namaperiode,
+			COALESCE(per.isonline, 0) as isonline,
+			COALESCE(p.hint, p.kodepeserta) as plain_password,
+			COALESCE(p.t_updatetime, NOW()) as t_updatetime,
+			COALESCE(jp.idjadwalujian, 0) as idjadwalujian,
+			COALESCE(rm.namaruang, ru.koderuang, '') as namaruang,
+			ru.tglmulai as tglujian_ruang,
+			ju.tglmulai as tglujian_jadwal,
+			COALESCE(ru.waktumulai, ju.waktumulai, '') as jammulai,
+			COALESCE(ru.waktuselesai, ju.waktuselesai, '') as jamselesai,
+			COALESCE(ju.waktupengerjaan::integer, 90) as durasi
+		FROM cat.at_peserta p
+		LEFT JOIN cat.at_pesertaujian pu ON pu.kodepeserta = p.kodepeserta AND (pu.softdelete = '0' OR pu.softdelete IS NULL)
+		LEFT JOIN cat.at_ujian u ON u.idujian = pu.idujian AND (u.softdelete = '0' OR u.softdelete IS NULL)
+		LEFT JOIN cat.at_periode per ON per.idperiode = u.idperiode
+		LEFT JOIN cat.at_jadwalpeserta jp ON jp.kodepeserta = p.kodepeserta AND (jp.softdelete = '0' OR jp.softdelete IS NULL)
+		LEFT JOIN cat.at_jadwalujian ju ON ju.idjadwalujian = jp.idjadwalujian AND (ju.softdelete = '0' OR ju.softdelete IS NULL)
+		LEFT JOIN cat.at_ruangujian ru ON ru.idruangujian = jp.idruangujian AND (ru.softdelete = '0' OR ru.softdelete IS NULL)
+		LEFT JOIN cat.at_ruang rm ON rm.koderuang = ru.koderuang
+		WHERE (p.idpendaftar = $1 OR p.kodepeserta = $1) AND (p.softdelete = '0' OR p.softdelete IS NULL)
+		ORDER BY p.t_updatetime DESC
+		LIMIT 1
+	`
+
+	var row struct {
+		KodePeserta     string         `db:"kodepeserta"`
+		IDPendaftar     string         `db:"idpendaftar"`
+		Nama            string         `db:"nama"`
+		JK              string         `db:"jk"`
+		Email           string         `db:"email"`
+		HP              string         `db:"hp"`
+		Alamat          string         `db:"alamat"`
+		IDKota          *int           `db:"idkota"`
+		IDUjian         int            `db:"idujian"`
+		NamaUjian       string         `db:"namaujian"`
+		IDPeriode       int            `db:"idperiode"`
+		NamaPeriode     string         `db:"namaperiode"`
+		IsOnline        int            `db:"isonline"`
+		PlainPassword   string         `db:"plain_password"`
+		TUpdateTime     time.Time      `db:"t_updatetime"`
+		IDJadwalUjian   int            `db:"idjadwalujian"`
+		NamaRuang       string         `db:"namaruang"`
+		TglUjianRuang   sql.NullTime   `db:"tglujian_ruang"`
+		TglUjianJadwal  sql.NullTime   `db:"tglujian_jadwal"`
+		JamMulai        string         `db:"jammulai"`
+		JamSelesai      string         `db:"jamselesai"`
+		Durasi          int            `db:"durasi"`
+	}
+
+	err := r.db.GetContext(ctx, &row, query, idPendaftar)
+	if err != nil {
+		return nil, fmt.Errorf("peserta dengan ID/Nomor '%s' tidak ditemukan: %w", idPendaftar, err)
+	}
+
+	isOnline := (row.IsOnline == 1)
+	metode := "Offline / Di Kampus"
+	if isOnline {
+		metode = "Online / Daring"
+	}
+
+	isPlotted := row.IDJadwalUjian > 0
+	tglStr := ""
+	if row.TglUjianRuang.Valid {
+		tglStr = row.TglUjianRuang.Time.Format("2006-01-02")
+	} else if row.TglUjianJadwal.Valid {
+		tglStr = row.TglUjianJadwal.Time.Format("2006-01-02")
+	}
+
+	jamMulai := ""
+	if row.JamMulai != "" {
+		jamMulai = formatTimeHi(row.JamMulai)
+	}
+	jamSelesai := ""
+	if row.JamSelesai != "" {
+		jamSelesai = formatTimeHi(row.JamSelesai)
+	}
+	if jamSelesai == "" && jamMulai != "" && row.Durasi > 0 {
+		parts := strings.Split(jamMulai, ":")
+		if len(parts) >= 2 {
+			hh, _ := strconv.Atoi(parts[0])
+			mm, _ := strconv.Atoi(parts[1])
+			totalMin := hh*60 + mm + row.Durasi
+			jamSelesai = fmt.Sprintf("%02d:%02d", (totalMin/60)%24, totalMin%60)
+		}
+	}
+
+	catatan := ""
+	if isPlotted {
+		if isOnline {
+			catatan = "Ujian dilaksanakan secara Daring / Online."
+		} else {
+			catatan = "Ujian dilaksanakan secara Luring di Lab Komputer Kampus."
+		}
+	} else {
+		if isOnline {
+			catatan = "Sesi ujian daring belum aktif."
+		} else {
+			catatan = "Kapasitas lab saat ini telah penuh. Peserta terdaftar dalam antrean pembagian sesi."
+		}
+	}
+
+	namaRuang := row.NamaRuang
+	if namaRuang == "" {
+		if isOnline {
+			namaRuang = "Daring / Online"
+		} else {
+			namaRuang = "Lab Utama"
+		}
+	}
+
+	return &dto.SPMBParticipantDetailDTO{
+		KodePeserta: row.KodePeserta,
+		IDPendaftar: row.IDPendaftar,
+		Nama:        row.Nama,
+		JK:          row.JK,
+		Email:       row.Email,
+		HP:          row.HP,
+		Alamat:      row.Alamat,
+		IDKota:      row.IDKota,
+		IDUjian:     row.IDUjian,
+		NamaUjian:   row.NamaUjian,
+		IDPeriode:   row.IDPeriode,
+		NamaPeriode: row.NamaPeriode,
+		IsOnline:    isOnline,
+		Metode:      metode,
+		Credentials: dto.SPMBCredentialsDTO{
+			Username: row.KodePeserta,
+			Password: row.PlainPassword,
+		},
+		Schedule: dto.SPMBScheduleInfoDTO{
+			IsPlotted:       isPlotted,
+			IDJadwalUjian:   row.IDJadwalUjian,
+			NamaRuang:       namaRuang,
+			TglUjian:        tglStr,
+			JamMulai:        jamMulai,
+			JamSelesai:      jamSelesai,
+			WaktuPengerjaan: row.Durasi,
+			Catatan:         catatan,
+		},
+		CreatedAt: row.TUpdateTime,
+	}, nil
+}
+
+func (r *integrationRepository) UpdateSPMBParticipant(ctx context.Context, idPendaftar string, req *dto.SPMBUpdateParticipantDTO) (*dto.SPMBParticipantDetailDTO, error) {
+	existing, err := r.GetSPMBParticipant(ctx, idPendaftar)
+	if err != nil || existing == nil {
+		return nil, fmt.Errorf("peserta dengan ID/Nomor '%s' tidak ditemukan: %w", idPendaftar, err)
+	}
+
+	kodepeserta := existing.KodePeserta
+
+	nama := existing.Nama
+	if strings.TrimSpace(req.Nama) != "" {
+		nama = strings.TrimSpace(req.Nama)
+	}
+	email := existing.Email
+	if strings.TrimSpace(req.Email) != "" {
+		email = strings.TrimSpace(req.Email)
+	}
+	hp := existing.HP
+	if strings.TrimSpace(req.HP) != "" {
+		hp = strings.TrimSpace(req.HP)
+	}
+	alamat := existing.Alamat
+	if strings.TrimSpace(req.Alamat) != "" {
+		alamat = strings.TrimSpace(req.Alamat)
+	}
+	jk := existing.JK
+	if req.JK == "L" || req.JK == "P" {
+		jk = req.JK
+	}
+	idkota := existing.IDKota
+	if req.IDKota != nil {
+		idkota = req.IDKota
+	}
+
+	if strings.TrimSpace(req.Password) != "" {
+		hasher := md5.New()
+		hasher.Write([]byte(strings.TrimSpace(req.Password)))
+		hashedPassword := hex.EncodeToString(hasher.Sum(nil))
+
+		_, err = r.db.ExecContext(ctx, `
+			UPDATE cat.at_peserta
+			SET nama = $1, email = $2, hp = $3, alamat = $4, jk = $5, idkota = $6,
+			    password = $7, hint = $8, t_updatetime = NOW(), t_updateact = 'u-spmb-api'
+			WHERE kodepeserta = $9
+		`, nama, email, hp, alamat, jk, idkota, hashedPassword, strings.TrimSpace(req.Password), kodepeserta)
+	} else {
+		_, err = r.db.ExecContext(ctx, `
+			UPDATE cat.at_peserta
+			SET nama = $1, email = $2, hp = $3, alamat = $4, jk = $5, idkota = $6,
+			    t_updatetime = NOW(), t_updateact = 'u-spmb-api'
+			WHERE kodepeserta = $7
+		`, nama, email, hp, alamat, jk, idkota, kodepeserta)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("gagal memperbarui data peserta: %w", err)
+	}
+
+	// If IDUjian is provided and different, reassign to new exam & schedule
+	if req.IDUjian > 0 && req.IDUjian != existing.IDUjian {
+		_, _ = r.db.ExecContext(ctx, `UPDATE cat.at_pesertaujian SET softdelete = '1', t_updatetime = NOW() WHERE kodepeserta = $1 AND idujian = $2`, kodepeserta, existing.IDUjian)
+		_, _ = r.db.ExecContext(ctx, `UPDATE cat.at_jadwalpeserta SET softdelete = '1', t_updatetime = NOW() WHERE kodepeserta = $1 AND idjadwalujian IN (SELECT idjadwalujian FROM cat.at_jadwalujian WHERE idujian = $2)`, kodepeserta, existing.IDUjian)
+
+		registerReq := &dto.SPMBRegisterRequestDTO{
+			IDUjian:     req.IDUjian,
+			IDPendaftar: idPendaftar,
+			NomorUjian:  kodepeserta,
+			Nama:        nama,
+			JK:          jk,
+			Email:       email,
+			HP:          hp,
+			Alamat:      alamat,
+			IDKota:      idkota,
+		}
+		_, err = r.RegisterSPMBParticipant(ctx, registerReq, existing.Credentials.Password)
+		if err != nil {
+			return nil, fmt.Errorf("gagal memindahkan peserta ke paket ujian baru: %w", err)
+		}
+	}
+
+	return r.GetSPMBParticipant(ctx, idPendaftar)
+}
+
+func (r *integrationRepository) DeleteSPMBParticipant(ctx context.Context, idPendaftar string) error {
+	existing, err := r.GetSPMBParticipant(ctx, idPendaftar)
+	if err != nil || existing == nil {
+		return fmt.Errorf("peserta dengan ID/Nomor '%s' tidak ditemukan: %w", idPendaftar, err)
+	}
+
+	kodepeserta := existing.KodePeserta
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("gagal memulai transaksi database: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.ExecContext(ctx, "UPDATE cat.at_jadwalpeserta SET softdelete = '1', t_updatetime = NOW(), t_updateact = 'd-spmb-api' WHERE kodepeserta = $1", kodepeserta); err != nil {
+		return fmt.Errorf("gagal membatalkan jadwal peserta: %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, "UPDATE cat.at_pesertaujian SET softdelete = '1', t_updatetime = NOW(), t_updateact = 'd-spmb-api' WHERE kodepeserta = $1", kodepeserta); err != nil {
+		return fmt.Errorf("gagal membatalkan pendaftaran ujian: %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, "UPDATE cat.at_peserta SET softdelete = '1', isaktif = 0, islogin = 0, t_updatetime = NOW(), t_updateact = 'd-spmb-api' WHERE kodepeserta = $1", kodepeserta); err != nil {
+		return fmt.Errorf("gagal menonaktifkan peserta: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+func (r *integrationRepository) GetUnplottedQueueSummary(ctx context.Context) (*dto.UnplottedQueueSummaryDTO, error) {
+	query := `
+		SELECT 
+			u.idujian,
+			u.namaujian,
+			u.idperiode,
+			COALESCE(p.namaperiode, '') as namaperiode,
+			COALESCE(SUM(r.jumlahpeserta), 0)::integer as total_capacity,
+			(
+				SELECT COUNT(DISTINCT pu.kodepeserta)
+				FROM cat.at_pesertaujian pu
+				WHERE pu.idujian = u.idujian AND (pu.softdelete = '0' OR pu.softdelete IS NULL)
+			) as total_registered,
+			(
+				SELECT COUNT(DISTINCT pu.kodepeserta)
+				FROM cat.at_pesertaujian pu
+				WHERE pu.idujian = u.idujian 
+				  AND (pu.softdelete = '0' OR pu.softdelete IS NULL)
+				  AND NOT EXISTS (
+				      SELECT 1 
+				      FROM cat.at_jadwalpeserta jp 
+				      JOIN cat.at_jadwalujian ju ON ju.idjadwalujian = jp.idjadwalujian
+				      WHERE jp.kodepeserta = pu.kodepeserta 
+				        AND ju.idujian = u.idujian 
+				        AND (jp.softdelete = '0' OR jp.softdelete IS NULL)
+				  )
+			) as unplotted_count
+		FROM cat.at_ujian u
+		LEFT JOIN cat.at_periode p ON p.idperiode = u.idperiode
+		LEFT JOIN cat.at_jadwalujian j ON j.idujian = u.idujian AND (j.softdelete = '0' OR j.softdelete IS NULL)
+		LEFT JOIN cat.at_ruangujian r ON r.idjadwalujian = j.idjadwalujian AND (r.softdelete = '0' OR r.softdelete IS NULL)
+		WHERE (u.softdelete = '0' OR u.softdelete IS NULL)
+		  AND COALESCE(p.isonline, 0) = 0
+		GROUP BY u.idujian, u.namaujian, u.idperiode, p.namaperiode
+		HAVING (
+			SELECT COUNT(DISTINCT pu.kodepeserta)
+			FROM cat.at_pesertaujian pu
+			WHERE pu.idujian = u.idujian 
+			  AND (pu.softdelete = '0' OR pu.softdelete IS NULL)
+			  AND NOT EXISTS (
+			      SELECT 1 
+			      FROM cat.at_jadwalpeserta jp 
+			      JOIN cat.at_jadwalujian ju ON ju.idjadwalujian = jp.idjadwalujian
+			      WHERE jp.kodepeserta = pu.kodepeserta 
+			        AND ju.idujian = u.idujian 
+			        AND (jp.softdelete = '0' OR jp.softdelete IS NULL)
+			  )
+		) > 0
+		ORDER BY unplotted_count DESC, u.idujian DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query unplotted queue summary: %w", err)
+	}
+	defer rows.Close()
+
+	summary := &dto.UnplottedQueueSummaryDTO{
+		TotalUnplotted: 0,
+		Exams:          []dto.UnplottedQueueItemDTO{},
+	}
+
+	for rows.Next() {
+		var item dto.UnplottedQueueItemDTO
+		if scanErr := rows.Scan(
+			&item.IDUjian,
+			&item.NamaUjian,
+			&item.IDPeriode,
+			&item.NamaPeriode,
+			&item.TotalCapacity,
+			&item.TotalRegistered,
+			&item.UnplottedCount,
+		); scanErr != nil {
+			return nil, scanErr
+		}
+		summary.TotalUnplotted += item.UnplottedCount
+		summary.Exams = append(summary.Exams, item)
+	}
+
+	return summary, nil
 }

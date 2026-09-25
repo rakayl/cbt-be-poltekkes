@@ -99,6 +99,83 @@ type SPMBRegisterResponseDTO struct {
 }
 
 // =========================================================================
+// SPMB Batch Registration DTOs
+// =========================================================================
+
+type SPMBBatchRegisterRequestDTO struct {
+	Participants []SPMBRegisterRequestDTO `json:"participants" binding:"required"`
+}
+
+type SPMBBatchItemResultDTO struct {
+	Index       int                      `json:"index"`
+	IDPendaftar string                   `json:"idpendaftar"`
+	Success     bool                     `json:"success"`
+	Error       string                   `json:"error,omitempty"`
+	Data        *SPMBRegisterResponseDTO `json:"data,omitempty"`
+}
+
+type SPMBBatchRegisterResponseDTO struct {
+	Total        int                      `json:"total"`
+	SuccessCount int                      `json:"success_count"`
+	FailedCount  int                      `json:"failed_count"`
+	Results      []SPMBBatchItemResultDTO `json:"results"`
+}
+
+// =========================================================================
+// SPMB Participant Lifecycle DTOs (Check Status & Update)
+// =========================================================================
+
+type SPMBUpdateParticipantDTO struct {
+	Nama     string `json:"nama"`
+	Email    string `json:"email"`
+	HP       string `json:"hp"`
+	Alamat   string `json:"alamat"`
+	JK       string `json:"jk"` // L / P
+	IDKota   *int   `json:"idkota"`
+	Password string `json:"password"`
+	IDUjian  int    `json:"idujian"` // Optional if changing exam
+}
+
+type SPMBParticipantDetailDTO struct {
+	KodePeserta string              `json:"kodepeserta"`
+	IDPendaftar string              `json:"idpendaftar"`
+	Nama        string              `json:"nama"`
+	JK          string              `json:"jk"`
+	Email       string              `json:"email"`
+	HP          string              `json:"hp"`
+	Alamat      string              `json:"alamat"`
+	IDKota      *int                `json:"idkota"`
+	IDUjian     int                 `json:"idujian"`
+	NamaUjian   string              `json:"namaujian"`
+	IDPeriode   int                 `json:"idperiode"`
+	NamaPeriode string              `json:"namaperiode"`
+	IsOnline    bool                `json:"is_online"`
+	Metode      string              `json:"metode"`
+	Credentials SPMBCredentialsDTO  `json:"cbt_credentials"`
+	Schedule    SPMBScheduleInfoDTO `json:"jadwal"`
+	CreatedAt   time.Time           `json:"created_at"`
+}
+
+// =========================================================================
+// Unplotted Queue Summary DTOs (Dashboard Alert)
+// =========================================================================
+
+type UnplottedQueueItemDTO struct {
+	IDUjian         int    `json:"idujian"`
+	NamaUjian       string `json:"namaujian"`
+	IDPeriode       int    `json:"idperiode"`
+	NamaPeriode     string `json:"namaperiode"`
+	UnplottedCount  int    `json:"unplotted_count"`
+	TotalCapacity   int    `json:"total_capacity"`
+	TotalRegistered int    `json:"total_registered"`
+}
+
+type UnplottedQueueSummaryDTO struct {
+	TotalUnplotted int                     `json:"total_unplotted"`
+	Exams          []UnplottedQueueItemDTO `json:"exams"`
+}
+
+// =========================================================================
 // API Access Audit Log DTOs
 // =========================================================================
 
