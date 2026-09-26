@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
 	"poltekkes-cat-backend/internal/modules/integration/dto"
@@ -139,7 +140,14 @@ func (h *IntegrationHandler) RegisterSPMBParticipant(c *gin.Context) {
 
 	res, err := h.service.RegisterSPMBParticipant(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalServerError(c, "Gagal mendaftarkan peserta dari SPMB: "+err.Error())
+		var valErr *dto.ValidationError
+		if errors.As(err, &valErr) {
+			response.BadRequest(c, "Validasi gagal: "+valErr.Message, []response.FieldError{
+				{Field: valErr.Field, Message: valErr.Message},
+			})
+			return
+		}
+		response.BadRequest(c, "Gagal mendaftarkan peserta dari SPMB: "+err.Error(), nil)
 		return
 	}
 
@@ -155,6 +163,13 @@ func (h *IntegrationHandler) RegisterSPMBBatchParticipants(c *gin.Context) {
 
 	res, err := h.service.RegisterSPMBBatchParticipants(c.Request.Context(), &req)
 	if err != nil {
+		var valErr *dto.ValidationError
+		if errors.As(err, &valErr) {
+			response.BadRequest(c, "Validasi gagal: "+valErr.Message, []response.FieldError{
+				{Field: valErr.Field, Message: valErr.Message},
+			})
+			return
+		}
 		response.BadRequest(c, "Gagal memproses pendaftaran batch: "+err.Error(), nil)
 		return
 	}

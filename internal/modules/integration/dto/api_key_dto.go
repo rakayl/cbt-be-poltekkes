@@ -98,6 +98,15 @@ type SPMBRegisterResponseDTO struct {
 	Schedule       SPMBScheduleInfoDTO `json:"jadwal"`
 }
 
+type ValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
 // =========================================================================
 // SPMB Batch Registration DTOs
 // =========================================================================
