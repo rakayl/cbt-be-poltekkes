@@ -273,45 +273,87 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 		jk = "L"
 	}
 
-	// 4. Upsert cat.at_peserta
-	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO cat.at_peserta (
-			kodepeserta, idperiode, nama, jk, hp, email, alamat, idkota,
-			password, hint, sumberdata, isvalid, isaktif, islogin,
-			kodereferensi, idpendaftar, softdelete, t_updatetime, t_updateact
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8,
-			$9, $10, 'P', 1, 0, 1,
-			$11, $12, '0', NOW(), 'i-spmb-api'
-		)
-		ON CONFLICT (kodepeserta) DO UPDATE SET
-			nama = EXCLUDED.nama,
-			jk = EXCLUDED.jk,
-			hp = EXCLUDED.hp,
-			email = EXCLUDED.email,
-			alamat = EXCLUDED.alamat,
-			idpendaftar = EXCLUDED.idpendaftar,
-			password = CASE WHEN $9 != '' THEN $9 ELSE cat.at_peserta.password END,
-			hint = CASE WHEN $10 != '' THEN $10 ELSE cat.at_peserta.hint END,
-			isvalid = 1,
-			softdelete = '0',
-			t_updatetime = NOW(),
-			t_updateact = 'u-spmb-api'
-	`, kodepeserta, exam.IDPeriode, req.Nama, jk, req.HP, req.Email, req.Alamat, req.IDKota,
-		hashedPassword, plainPassword, kodepeserta, req.IDPendaftar)
-	if err != nil {
-		return nil, fmt.Errorf("gagal mendaftarkan data peserta di master: %w", err)
+	// 4. Upsert cat.at_peserta (Defensive: check existence first to be resilient to missing constraints)
+	var existingPeserta int
+	_ = r.db.GetContext(ctx, &existingPeserta, "SELECT COUNT(*) FROM cat.at_peserta WHERE kodepeserta = $1", kodepeserta)
+	if existingPeserta > 0 {
+		_, err = r.db.ExecContext(ctx, `
+			UPDATE cat.at_peserta SET
+				nama = $1,
+				jk = $2,
+				hp = $3,
+				email = $4,
+				alamat = $5,
+				idpendaftar = $6,
+				password = CASE WHEN $7 != '' THEN $7 ELSE cat.at_peserta.password END,
+				hint = CASE WHEN $8 != '' THEN $8 ELSE cat.at_peserta.hint END,
+				isvalid = 1,
+				softdelete = '0',
+				t_updatetime = NOW(),
+				t_updateact = 'u-spmb-api'
+			WHERE kodepeserta = $9
+		`, req.Nama, jk, req.HP, req.Email, req.Alamat, req.IDPendaftar,
+			hashedPassword, plainPassword, kodepeserta)
+		if err != nil {
+			return nil, fmt.Errorf("gagal mengupdate data peserta di master: %w", err)
+		}
+	} else {
+		_, err = r.db.ExecContext(ctx, `
+			INSERT INTO cat.at_peserta (
+				kodepeserta, idperiode, nama, jk, hp, email, alamat, idkota,
+				password, hint, sumberdata, isvalid, isaktif, islogin,
+				kodereferensi, idpendaftar, softdelete, t_updatetime, t_updateact
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8,
+				$9, $10, 'P', 1, 0, 1,
+				$11, $12, '0', NOW(), 'i-spmb-api'
+			)
+		`, kodepeserta, exam.IDPeriode, req.Nama, jk, req.HP, req.Email, req.Alamat, req.IDKota,
+			hashedPassword, plainPassword, kodepeserta, req.IDPendaftar)
+		if err != nil {
+			// Fallback update in case of concurrent insert
+			_, err = r.db.ExecContext(ctx, `
+				UPDATE cat.at_peserta SET
+					nama = $1, jk = $2, hp = $3, email = $4, alamat = $5, idpendaftar = $6,
+					password = CASE WHEN $7 != '' THEN $7 ELSE cat.at_peserta.password END,
+					hint = CASE WHEN $8 != '' THEN $8 ELSE cat.at_peserta.hint END,
+					isvalid = 1, softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-api'
+				WHERE kodepeserta = $9
+			`, req.Nama, jk, req.HP, req.Email, req.Alamat, req.IDPendaftar,
+				hashedPassword, plainPassword, kodepeserta)
+			if err != nil {
+				return nil, fmt.Errorf("gagal mendaftarkan data peserta di master: %w", err)
+			}
+		}
 	}
 
 	// 5. Upsert cat.at_pesertaujian
-	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO cat.at_pesertaujian (kodepeserta, idujian, softdelete, t_updatetime, t_updateact)
-		VALUES ($1, $2, '0', NOW(), 'i-spmb-api')
-		ON CONFLICT (kodepeserta, idujian) DO UPDATE
-		SET softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-api'
-	`, kodepeserta, exam.IDUjian)
-	if err != nil {
-		return nil, fmt.Errorf("gagal mendaftarkan peserta ke ujian #%d: %w", exam.IDUjian, err)
+	var existingPesertaUjian int
+	_ = r.db.GetContext(ctx, &existingPesertaUjian, "SELECT COUNT(*) FROM cat.at_pesertaujian WHERE kodepeserta = $1 AND idujian = $2", kodepeserta, exam.IDUjian)
+	if existingPesertaUjian > 0 {
+		_, err = r.db.ExecContext(ctx, `
+			UPDATE cat.at_pesertaujian
+			SET softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-api'
+			WHERE kodepeserta = $1 AND idujian = $2
+		`, kodepeserta, exam.IDUjian)
+		if err != nil {
+			return nil, fmt.Errorf("gagal memperbarui status peserta di ujian #%d: %w", exam.IDUjian, err)
+		}
+	} else {
+		_, err = r.db.ExecContext(ctx, `
+			INSERT INTO cat.at_pesertaujian (kodepeserta, idujian, softdelete, t_updatetime, t_updateact)
+			VALUES ($1, $2, '0', NOW(), 'i-spmb-api')
+		`, kodepeserta, exam.IDUjian)
+		if err != nil {
+			_, err = r.db.ExecContext(ctx, `
+				UPDATE cat.at_pesertaujian
+				SET softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-api'
+				WHERE kodepeserta = $1 AND idujian = $2
+			`, kodepeserta, exam.IDUjian)
+			if err != nil {
+				return nil, fmt.Errorf("gagal mendaftarkan peserta ke ujian #%d: %w", exam.IDUjian, err)
+			}
+		}
 	}
 
 	resp := &dto.SPMBRegisterResponseDTO{
@@ -414,22 +456,41 @@ func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req
 			}
 
 			// Plot into cat.at_jadwalpeserta
-			_, plotErr := r.db.ExecContext(ctx, `
-				INSERT INTO cat.at_jadwalpeserta (
-					kodepeserta, idjadwalujian, idruangujian, is_locked, risk_level,
-					softdelete, t_updatetime, t_updateact
-				) VALUES (
-					$1, $2, $3, 0, 'NORMAL', '0', NOW(), 'i-spmb-plot'
-				)
-				ON CONFLICT (kodepeserta, idjadwalujian) DO UPDATE
-				SET idruangujian = $3, softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-plot'
-			`, kodepeserta, availableSession.IDJadwalUjian, ruangArg)
-
-			if plotErr == nil {
-				resp.Schedule.IsPlotted = true
-				resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+			var existingJadwalPeserta int
+			_ = r.db.GetContext(ctx, &existingJadwalPeserta, "SELECT COUNT(*) FROM cat.at_jadwalpeserta WHERE kodepeserta = $1 AND idjadwalujian = $2", kodepeserta, availableSession.IDJadwalUjian)
+			if existingJadwalPeserta > 0 {
+				_, plotErr := r.db.ExecContext(ctx, `
+					UPDATE cat.at_jadwalpeserta
+					SET idruangujian = $3, softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-plot'
+					WHERE kodepeserta = $1 AND idjadwalujian = $2
+				`, kodepeserta, availableSession.IDJadwalUjian, ruangArg)
+				if plotErr == nil {
+					resp.Schedule.IsPlotted = true
+					resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+				}
 			} else {
-				resp.Schedule.IsPlotted = false
+				_, plotErr := r.db.ExecContext(ctx, `
+					INSERT INTO cat.at_jadwalpeserta (
+						kodepeserta, idjadwalujian, idruangujian, is_locked, risk_level,
+						softdelete, t_updatetime, t_updateact
+					) VALUES (
+						$1, $2, $3, 0, 'NORMAL', '0', NOW(), 'i-spmb-plot'
+					)
+				`, kodepeserta, availableSession.IDJadwalUjian, ruangArg)
+				if plotErr == nil {
+					resp.Schedule.IsPlotted = true
+					resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+				} else {
+					_, updateErr := r.db.ExecContext(ctx, `
+						UPDATE cat.at_jadwalpeserta
+						SET idruangujian = $3, softdelete = '0', t_updatetime = NOW(), t_updateact = 'u-spmb-plot'
+						WHERE kodepeserta = $1 AND idjadwalujian = $2
+					`, kodepeserta, availableSession.IDJadwalUjian, ruangArg)
+					if updateErr == nil {
+						resp.Schedule.IsPlotted = true
+						resp.Schedule.IDJadwalUjian = availableSession.IDJadwalUjian
+					}
+				}
 			}
 			if availableSession.NamaRuang.Valid && availableSession.NamaRuang.String != "" {
 				resp.Schedule.NamaRuang = availableSession.NamaRuang.String
