@@ -29,6 +29,7 @@ type IntegrationRepository interface {
 
 	// SPMB Integration
 	GetSPMBActiveExams(ctx context.Context, refDate string) ([]*dto.SPMBActiveExamDTO, error)
+	CheckSPMBParticipantDuplicate(ctx context.Context, idPendaftar, nomorUjian string, idUjian int) (*dto.ValidationError, error)
 	RegisterSPMBParticipant(ctx context.Context, req *dto.SPMBRegisterRequestDTO, plainPassword string) (*dto.SPMBRegisterResponseDTO, error)
 	GetSPMBParticipant(ctx context.Context, idPendaftar string) (*dto.SPMBParticipantDetailDTO, error)
 	UpdateSPMBParticipant(ctx context.Context, idPendaftar string, req *dto.SPMBUpdateParticipantDTO) (*dto.SPMBParticipantDetailDTO, error)
@@ -226,6 +227,89 @@ func (r *integrationRepository) GetSPMBActiveExams(ctx context.Context, refDate 
 	}
 
 	return results, nil
+}
+
+func (r *integrationRepository) CheckSPMBParticipantDuplicate(ctx context.Context, idPendaftar, nomorUjian string, idUjian int) (*dto.ValidationError, error) {
+	idPendaftar = strings.TrimSpace(idPendaftar)
+	nomorUjian = strings.TrimSpace(nomorUjian)
+	kodepeserta := nomorUjian
+	if kodepeserta == "" {
+		kodepeserta = idPendaftar
+	}
+	if len(kodepeserta) > 20 {
+		kodepeserta = kodepeserta[:20]
+	}
+
+	// 1. Check if idPendaftar is already registered in cat.at_peserta
+	if idPendaftar != "" {
+		var existingByPendaftar struct {
+			KodePeserta string `db:"kodepeserta"`
+			Nama        string `db:"nama"`
+		}
+		err := r.db.GetContext(ctx, &existingByPendaftar, `
+			SELECT kodepeserta, COALESCE(nama, '') as nama 
+			FROM cat.at_peserta 
+			WHERE idpendaftar = $1 AND (softdelete = '0' OR softdelete IS NULL)
+			LIMIT 1
+		`, idPendaftar)
+		if err == nil {
+			return &dto.ValidationError{
+				Field:   "idpendaftar",
+				Message: fmt.Sprintf("ID Pendaftar '%s' sudah terdaftar dalam sistem CBT atas nama '%s' (Kode Peserta: %s)", idPendaftar, existingByPendaftar.Nama, existingByPendaftar.KodePeserta),
+			}, nil
+		} else if err != sql.ErrNoRows {
+			return nil, err
+		}
+	}
+
+	// 2. Check if kodepeserta (nomor_ujian) is already used in cat.at_peserta
+	if kodepeserta != "" {
+		var existingByKode struct {
+			IDPendaftar string `db:"idpendaftar"`
+			Nama        string `db:"nama"`
+		}
+		err := r.db.GetContext(ctx, &existingByKode, `
+			SELECT COALESCE(idpendaftar, '') as idpendaftar, COALESCE(nama, '') as nama 
+			FROM cat.at_peserta 
+			WHERE kodepeserta = $1 AND (softdelete = '0' OR softdelete IS NULL)
+			LIMIT 1
+		`, kodepeserta)
+		if err == nil {
+			field := "nomor_ujian"
+			if nomorUjian == "" {
+				field = "idpendaftar"
+			}
+			return &dto.ValidationError{
+				Field:   field,
+				Message: fmt.Sprintf("Nomor Ujian / Kode Peserta '%s' sudah digunakan di sistem CBT atas nama '%s'", kodepeserta, existingByKode.Nama),
+			}, nil
+		} else if err != sql.ErrNoRows {
+			return nil, err
+		}
+	}
+
+	// 3. Check if already enrolled in this specific exam (cat.at_pesertaujian)
+	if idUjian > 0 {
+		var enrolledCount int
+		err := r.db.GetContext(ctx, &enrolledCount, `
+			SELECT COUNT(*) 
+			FROM cat.at_pesertaujian pu
+			JOIN cat.at_peserta p ON p.kodepeserta = pu.kodepeserta
+			WHERE (p.idpendaftar = $1 OR p.kodepeserta = $2)
+			  AND pu.idujian = $3
+			  AND (pu.softdelete = '0' OR pu.softdelete IS NULL)
+		`, idPendaftar, kodepeserta, idUjian)
+		if err == nil && enrolledCount > 0 {
+			return &dto.ValidationError{
+				Field:   "idujian",
+				Message: fmt.Sprintf("Peserta dengan ID Pendaftar '%s' / Nomor '%s' sudah terdaftar pada ujian ini (#%d)", idPendaftar, kodepeserta, idUjian),
+			}, nil
+		} else if err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
 func (r *integrationRepository) RegisterSPMBParticipant(ctx context.Context, req *dto.SPMBRegisterRequestDTO, plainPassword string) (*dto.SPMBRegisterResponseDTO, error) {

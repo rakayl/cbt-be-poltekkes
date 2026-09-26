@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
+
 	"poltekkes-cat-backend/internal/modules/peserta/dto"
 	"poltekkes-cat-backend/internal/modules/peserta/entity"
 	"poltekkes-cat-backend/internal/modules/peserta/repository"
@@ -69,6 +71,11 @@ func (s *pesertaService) GetParticipantByCode(ctx context.Context, code string) 
 }
 
 func (s *pesertaService) CreateParticipant(ctx context.Context, req *dto.SavePesertaRequestDTO) error {
+	existing, _ := s.repo.GetParticipantByCode(ctx, req.KodePeserta)
+	if existing != nil {
+		return fmt.Errorf("kode peserta '%s' sudah terdaftar dalam sistem", req.KodePeserta)
+	}
+
 	rawPass := req.KodePeserta
 	if req.Password != nil && *req.Password != "" {
 		rawPass = *req.Password

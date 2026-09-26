@@ -194,8 +194,9 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 		req.NomorUjian = strings.TrimSpace(req.NoUjian)
 	}
 
+	// 1. Mandatory Form Validation
 	if req.IDUjian <= 0 && req.ExamID <= 0 {
-		return nil, fmt.Errorf("idujian wajib diisi")
+		return nil, &dto.ValidationError{Field: "idujian", Message: "idujian wajib diisi"}
 	}
 	if req.IDUjian <= 0 {
 		req.IDUjian = req.ExamID
@@ -204,10 +205,17 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 		req.ExamID = req.IDUjian
 	}
 	if req.IDPendaftar == "" {
-		return nil, fmt.Errorf("idpendaftar wajib diisi")
+		return nil, &dto.ValidationError{Field: "idpendaftar", Message: "idpendaftar wajib diisi"}
 	}
 	if req.Nama == "" {
-		return nil, fmt.Errorf("nama peserta wajib diisi")
+		return nil, &dto.ValidationError{Field: "nama", Message: "nama peserta wajib diisi"}
+	}
+
+	// 2. Uniqueness Validation against Database (Menghindari Duplikasi)
+	if valErr, err := s.repo.CheckSPMBParticipantDuplicate(ctx, req.IDPendaftar, req.NomorUjian, req.IDUjian); err != nil {
+		return nil, fmt.Errorf("gagal memvalidasi duplikasi data peserta: %w", err)
+	} else if valErr != nil {
+		return nil, valErr
 	}
 
 	plainPassword := strings.TrimSpace(req.Password)
@@ -230,12 +238,12 @@ func (s *integrationService) RegisterSPMBParticipant(ctx context.Context, req *d
 
 func (s *integrationService) RegisterSPMBBatchParticipants(ctx context.Context, req *dto.SPMBBatchRegisterRequestDTO) (*dto.SPMBBatchRegisterResponseDTO, error) {
 	if req == nil || len(req.Participants) == 0 {
-		return nil, fmt.Errorf("daftar peserta tidak boleh kosong")
+		return nil, &dto.ValidationError{Field: "participants", Message: "daftar peserta tidak boleh kosong"}
 	}
 
 	const maxBatchSize = 200
 	if len(req.Participants) > maxBatchSize {
-		return nil, fmt.Errorf("maksimal pendaftaran batch adalah %d peserta per permintaan", maxBatchSize)
+		return nil, &dto.ValidationError{Field: "participants", Message: fmt.Sprintf("maksimal pendaftaran batch adalah %d peserta per permintaan", maxBatchSize)}
 	}
 
 	resp := &dto.SPMBBatchRegisterResponseDTO{
@@ -245,8 +253,80 @@ func (s *integrationService) RegisterSPMBBatchParticipants(ctx context.Context, 
 		Results:      make([]dto.SPMBBatchItemResultDTO, 0, len(req.Participants)),
 	}
 
+	// In-batch duplicate tracking (record index + 1 for user-friendly error message)
+	seenIDPendaftar := make(map[string]int) // idpendaftar -> 1-based index
+	seenNomorUjian := make(map[string]int)  // nomor_ujian -> 1-based index
+
 	for idx, p := range req.Participants {
 		itemReq := p // copy
+		idPendaftar := strings.TrimSpace(itemReq.IDPendaftar)
+		nomorUjian := strings.TrimSpace(itemReq.NomorUjian)
+		if nomorUjian == "" && itemReq.NoUjian != "" {
+			nomorUjian = strings.TrimSpace(itemReq.NoUjian)
+		}
+
+		// 1. Mandatory field validation per item
+		if idPendaftar == "" {
+			resp.FailedCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: "",
+				Success:     false,
+				Error:       "idpendaftar wajib diisi",
+			})
+			continue
+		}
+		if strings.TrimSpace(itemReq.Nama) == "" {
+			resp.FailedCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: idPendaftar,
+				Success:     false,
+				Error:       "nama peserta wajib diisi",
+			})
+			continue
+		}
+		if itemReq.IDUjian <= 0 && itemReq.ExamID <= 0 {
+			resp.FailedCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: idPendaftar,
+				Success:     false,
+				Error:       "idujian wajib diisi",
+			})
+			continue
+		}
+
+		// 2. In-batch unique validation (menghindari duplikat dalam satu request batch yang sama)
+		if prevLine, found := seenIDPendaftar[idPendaftar]; found {
+			resp.FailedCount++
+			resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+				Index:       idx,
+				IDPendaftar: idPendaftar,
+				Success:     false,
+				Error:       fmt.Sprintf("ID Pendaftar '%s' duplikat di dalam batch (sudah ada pada baris ke-%d)", idPendaftar, prevLine),
+			})
+			continue
+		}
+		if nomorUjian != "" {
+			if prevLine, found := seenNomorUjian[nomorUjian]; found {
+				resp.FailedCount++
+				resp.Results = append(resp.Results, dto.SPMBBatchItemResultDTO{
+					Index:       idx,
+					IDPendaftar: idPendaftar,
+					Success:     false,
+					Error:       fmt.Sprintf("Nomor Ujian '%s' duplikat di dalam batch (sudah ada pada baris ke-%d)", nomorUjian, prevLine),
+				})
+				continue
+			}
+		}
+
+		seenIDPendaftar[idPendaftar] = idx + 1
+		if nomorUjian != "" {
+			seenNomorUjian[nomorUjian] = idx + 1
+		}
+
+		// 3. Register with database uniqueness validation
 		res, err := s.RegisterSPMBParticipant(ctx, &itemReq)
 		if err != nil {
 			resp.FailedCount++
@@ -255,7 +335,6 @@ func (s *integrationService) RegisterSPMBBatchParticipants(ctx context.Context, 
 				IDPendaftar: itemReq.IDPendaftar,
 				Success:     false,
 				Error:       err.Error(),
-				Data:        nil,
 			})
 		} else {
 			resp.SuccessCount++
